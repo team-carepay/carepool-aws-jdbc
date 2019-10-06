@@ -1,0 +1,33 @@
+definitions:
+  caches:
+    gradle-wrapper: ~/.gradle/wrapper
+    gradle-notifications: ~/.gradle/notifications
+    sonar: ~/.sonar/cache
+  common-caches: &common-caches
+    caches:
+      - gradle
+      - gradle-wrapper
+      - gradle-notifications
+      - sonar
+  steps:
+    - &build
+      <<: *common-caches
+      name: Build
+      # language=sh
+      script:
+        - ./gradlew build sonar
+      artifacts:
+        - build/**
+    - &release
+      <<: *common-caches
+      name: Release
+      # language=sh
+      script:
+        - ./gradlew release -Prelease.useAutomaticVersion=true
+
+pipelines:
+  default:
+    - step: *build
+  branches:
+    master:
+      - step: *release
