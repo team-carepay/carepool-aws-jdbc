@@ -23,6 +23,7 @@ definitions:
       name: Release
       # language=sh
       script:
+            - git remote set-url origin "https://x-token-auth:$(curl -s -X POST -u "$BOT_CREDENTIALS" https://bitbucket.org/site/oauth2/access_token -d grant_type=client_credentials -d scopes="repository" | jq -r .access_token)@bitbucket.org/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}"
         - ./gradlew release -Prelease.useAutomaticVersion=true
 
 pipelines:
