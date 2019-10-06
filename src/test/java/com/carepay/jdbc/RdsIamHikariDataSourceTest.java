@@ -1,9 +1,5 @@
 package com.carepay.jdbc;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Properties;
-
 import com.amazonaws.services.rds.auth.GetIamAuthTokenRequest;
 import com.amazonaws.services.rds.auth.RdsIamAuthTokenGenerator;
 import org.junit.Before;
