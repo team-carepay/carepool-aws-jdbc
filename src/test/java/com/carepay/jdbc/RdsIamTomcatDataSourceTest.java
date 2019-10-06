@@ -38,6 +38,7 @@ public class RdsIamTomcatDataSourceTest {
 
     @Test
     public void testBackgroundThreadCreatesNewPassword() throws SQLException {
+        RdsIamTomcatDataSource.DEFAULT_TIMEOUT = 1000L;
         rdsIamTomcatDataSource = new RdsIamTomcatDataSource() {
             @Override
             protected synchronized ConnectionPool createPoolImpl() throws SQLException {
@@ -49,7 +50,6 @@ public class RdsIamTomcatDataSourceTest {
                 return pool;
             }
         };
-        RdsIamTomcatDataSource.DEFAULT_TIMEOUT = 1L;
         init();
         rdsIamTomcatDataSource.getConnection();
         final String password = rdsIamTomcatDataSource.getPoolProperties().getPassword();
