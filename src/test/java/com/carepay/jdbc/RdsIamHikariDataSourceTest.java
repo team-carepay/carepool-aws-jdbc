@@ -21,7 +21,7 @@ public class RdsIamHikariDataSourceTest {
 
     @Test
     public void configureSSL() {
-        assertThat(rdsIamHikariDataSource.getDataSourceProperties().getProperty("useSSL")).isEqualTo("true");
+        assertThat(rdsIamHikariDataSource.getDataSourceProperties().getProperty("requireSSL")).isEqualTo("true");
     }
 
     @Test
