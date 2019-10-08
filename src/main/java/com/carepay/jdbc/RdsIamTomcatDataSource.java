@@ -87,9 +87,9 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
                 prop.setValidationQuery("select 1");
                 prop.setTestOnBorrow(true);
                 final Properties props = prop.getDbProperties();
-                props.setProperty("useSSL","true");
-                props.setProperty("requireSSL","true");
-                props.setProperty("trustCertificateKeyStoreUrl","classpath:/rds-combined-ca-bundle.pem");
+                props.setProperty("requireSSL","true"); // for MySQL 5.x and before
+                props.setProperty("sslMode","REQUIRED"); // for MySQL 8.x and higher
+                props.setProperty("trustCertificateKeyStoreUrl","classpath:rds-combined-ca-bundle.pem");
                 props.setProperty("trustCertificateKeyStoreType", "PEM");
 
                 super.init(prop);
