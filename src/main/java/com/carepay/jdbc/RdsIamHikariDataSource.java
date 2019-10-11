@@ -2,35 +2,45 @@ package com.carepay.jdbc;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.Security;
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.time.ZoneId;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import com.amazonaws.services.rds.auth.GetIamAuthTokenRequest;
 import com.amazonaws.services.rds.auth.RdsIamAuthTokenGenerator;
 import com.zaxxer.hikari.HikariDataSource;
+import de.dentrassi.crypto.pem.PemKeyStoreProvider;
 import org.apache.commons.lang3.StringUtils;
 
 /**
  * DataSource based on Hikari connection pool that supports IAM authentication to RDS
  */
-public class RdsIamHikariDataSource extends HikariDataSource {
+public class RdsIamHikariDataSource extends HikariDataSource implements RdsIamConstants {
 
     public static final int DEFAULT_PORT = 3306;
 
-    private static Clock clock = Clock.systemDefaultZone();
+    static Clock clock = Clock.systemDefaultZone();
     private RdsIamAuthTokenGenerator rdsIamAuthTokenGenerator;
     private LocalDateTime expiryDate;
     private String authToken;
     private GetIamAuthTokenRequest rdsIamAuthTokenRequest;
 
+    static {
+        Security.addProvider(new PemKeyStoreProvider());
+    }
+
+    /**
+     * RDS IAM authentication sends the token as a plaintext password. SSL must be enabled.
+     */
     public RdsIamHikariDataSource() {
-        addDataSourceProperty("requireSSL","true"); // for MySQL 5.x and before
-        addDataSourceProperty("sslMode","REQUIRED"); // for MySQL 8.x and higher
-        addDataSourceProperty("trustCertificateKeyStoreUrl","classpath:rds-combined-ca-bundle.pem");
-        addDataSourceProperty("trustCertificateKeyStoreType", "PEM");
+        addDataSourceProperty(REQUIRE_SSL,"true"); // for MySQL 5.x and before
+        addDataSourceProperty(VERIFY_SERVER_CERTIFICATE, "true");
+        addDataSourceProperty(SSL_MODE, VERIFY_CA); // for MySQL 8.x and higher
+        addDataSourceProperty(TRUST_CERTIFICATE_KEY_STORE_URL,CA_BUNDLE_URL);
+        addDataSourceProperty(TRUST_CERTIFICATE_KEY_STORE_TYPE, PEM);
     }
 
     /**
@@ -40,7 +50,7 @@ public class RdsIamHikariDataSource extends HikariDataSource {
     protected void initTokenGenerator() {
         try {
             final URI uri = new URI(this.getJdbcUrl().substring(5)); // jdbc:
-            final String host = Optional.ofNullable(uri.getHost()).orElse("localhost");
+            final String host = uri.getHost();
             final int port = uri.getPort() > 0 ? uri.getPort() : DEFAULT_PORT;
             final String region = host != null && host.endsWith(".rds.amazonaws.com") ? StringUtils.split(host, '.')[2] :  new DefaultAwsRegionProviderChain().getRegion();
             this.rdsIamAuthTokenGenerator = getRdsIamAuthTokenGenerator(region);
@@ -77,7 +87,7 @@ public class RdsIamHikariDataSource extends HikariDataSource {
      */
     @Override
     public String getPassword() {
-        LocalDateTime now = LocalDateTime.now(clock);
+        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneId.of("UTC"));
         if (this.rdsIamAuthTokenGenerator == null) {
             initTokenGenerator();
         }

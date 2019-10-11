@@ -15,12 +15,12 @@ public class RdsIamTomcatDataSourceTest {
 
     private void init() {
         rdsIamTomcatDataSource.setDriverClassName(H2Driver.class.getName());
-        rdsIamTomcatDataSource.setUrl("jdbc:mysql://localhost/database");
+        rdsIamTomcatDataSource.setUrl("jdbc:mysql://mydb.random.eu-west-1.rds.amazonaws.com/database");
         rdsIamTomcatDataSource.setUsername("iamuser");
     }
 
     @Before
-    public void setUp() throws SQLException {
+    public void setUp() {
         rdsIamTomcatDataSource = new RdsIamTomcatDataSource();
         init();
     }

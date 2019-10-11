@@ -3,6 +3,7 @@ package com.carepay.jdbc;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.Security;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
@@ -12,6 +13,7 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import com.amazonaws.services.rds.auth.GetIamAuthTokenRequest;
 import com.amazonaws.services.rds.auth.RdsIamAuthTokenGenerator;
+import de.dentrassi.crypto.pem.PemKeyStoreProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.apache.tomcat.jdbc.pool.PoolConfiguration;
@@ -23,12 +25,16 @@ import org.slf4j.LoggerFactory;
 /**
  * DataSource based on Tomcat connection pool that supports IAM authentication to RDS
  */
-public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSource {
+public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSource implements RdsIamConstants {
 
     private static final Logger LOG = LoggerFactory.getLogger(RdsIamTomcatDataSource.class);
 
     static long DEFAULT_TIMEOUT = 600000L; // renew every 10 minutes, since token expires after 15m
     public static final int DEFAULT_PORT = 3306;
+
+    static {
+        Security.addProvider(new PemKeyStoreProvider());
+    }
 
     /**
      * Creates a new Connection Pool once. Overridden so we can change the underlying pool.
@@ -84,13 +90,12 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
                 this.rdsIamAuthTokenRequest = getIamAuthTokenRequest(host, port, prop.getUsername());
                 updatePassword(prop);
 
-                prop.setValidationQuery("select 1");
-                prop.setTestOnBorrow(true);
                 final Properties props = prop.getDbProperties();
-                props.setProperty("requireSSL","true"); // for MySQL 5.x and before
-                props.setProperty("sslMode","REQUIRED"); // for MySQL 8.x and higher
-                props.setProperty("trustCertificateKeyStoreUrl","classpath:rds-combined-ca-bundle.pem");
-                props.setProperty("trustCertificateKeyStoreType", "PEM");
+                props.setProperty(REQUIRE_SSL,"true"); // for MySQL 5.x and before
+                props.setProperty(VERIFY_SERVER_CERTIFICATE, "true");
+                props.setProperty(SSL_MODE,VERIFY_CA); // for MySQL 8.x and higher
+                props.setProperty(TRUST_CERTIFICATE_KEY_STORE_URL,CA_BUNDLE_URL);
+                props.setProperty(TRUST_CERTIFICATE_KEY_STORE_TYPE, PEM);
 
                 super.init(prop);
                 this.busyConnections = getPrivateConnectionListField("busy");
@@ -156,6 +161,10 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
             }
         }
 
+        /**
+         * Updates the password in the pool by generating a new token
+         * @param poolConfiguration
+         */
         private void updatePassword(PoolConfiguration poolConfiguration) {
             String token = rdsIamAuthTokenGenerator.getAuthToken(rdsIamAuthTokenRequest);
             LOG.debug("Updated IAM token for connection pool");
