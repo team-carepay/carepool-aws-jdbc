@@ -4,8 +4,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 
-import com.amazonaws.services.rds.auth.GetIamAuthTokenRequest;
-import com.amazonaws.services.rds.auth.RdsIamAuthTokenGenerator;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -17,6 +16,9 @@ public class RdsIamHikariDataSourceTest {
 
     @Before
     public void setUp() {
+        System.setProperty("aws.accessKeyId", "IAMKEYINSTANCE");
+        System.setProperty("aws.secretAccessKey", "asdfqwertypolly");
+        System.setProperty("aws.token", "ZYX12345");
         RdsIamHikariDataSource.clock = Clock.fixed(Instant.parse("2018-09-19T16:02:42.00Z"), ZoneId.of("UTC"));
         rdsIamHikariDataSource = new RdsIamHikariDataSource();
         rdsIamHikariDataSource.setDriverClassName(H2Driver.class.getName());
@@ -24,21 +26,17 @@ public class RdsIamHikariDataSourceTest {
         rdsIamHikariDataSource.setUsername("iamuser");
     }
 
+    @After
+    public void tearDown() {
+        rdsIamHikariDataSource.close();
+        System.clearProperty("aws.accessKeyId");
+        System.clearProperty("aws.secretAccessKey");
+        System.clearProperty("aws.token");
+    }
+
     @Test
     public void configureSSL() {
         assertThat(rdsIamHikariDataSource.getDataSourceProperties().getProperty("requireSSL")).isEqualTo("true");
-    }
-
-    @Test
-    public void getIamAuthTokenRequest() {
-        GetIamAuthTokenRequest iamAuthTokenRequest = rdsIamHikariDataSource.getIamAuthTokenRequest("localhost",3306);
-        assertThat(iamAuthTokenRequest.getHostname()).isEqualTo("localhost");
-    }
-
-    @Test
-    public void getRdsIamAuthTokenGenerator() {
-        RdsIamAuthTokenGenerator rdsIamAuthTokenGenerator = rdsIamHikariDataSource.getRdsIamAuthTokenGenerator("eu-west-1");
-        assertThat(rdsIamAuthTokenGenerator).isNotNull();
     }
 
     @Test

@@ -21,6 +21,9 @@ public class RdsIamTomcatDataSourceTest {
 
     @Before
     public void setUp() {
+        System.setProperty("aws.accessKeyId", "IAMKEYINSTANCE");
+        System.setProperty("aws.secretAccessKey", "asdfqwertypolly");
+        System.setProperty("aws.token", "ZYX12345");
         rdsIamTomcatDataSource = new RdsIamTomcatDataSource();
         init();
     }
@@ -28,6 +31,9 @@ public class RdsIamTomcatDataSourceTest {
     @After
     public void tearDown() {
         rdsIamTomcatDataSource.close();
+        System.clearProperty("aws.accessKeyId");
+        System.clearProperty("aws.secretAccessKey");
+        System.clearProperty("aws.token");
     }
 
     @Test

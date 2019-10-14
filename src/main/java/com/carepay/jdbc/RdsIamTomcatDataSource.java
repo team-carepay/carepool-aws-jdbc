@@ -9,12 +9,9 @@ import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Consumer;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.DefaultAwsRegionProviderChain;
-import com.amazonaws.services.rds.auth.GetIamAuthTokenRequest;
-import com.amazonaws.services.rds.auth.RdsIamAuthTokenGenerator;
+import com.carepay.jdbc.aws.AWS4RdsIamTokenGenerator;
+import com.carepay.jdbc.aws.DefaultAWSCredentialsProviderChain;
 import com.carepay.jdbc.pem.PemKeyStoreProvider;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.apache.tomcat.jdbc.pool.PoolConfiguration;
 import org.apache.tomcat.jdbc.pool.PoolUtilities;
@@ -64,11 +61,12 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
      */
     public static class RdsIamAuthConnectionPool extends ConnectionPool implements Runnable {
 
-        private RdsIamAuthTokenGenerator rdsIamAuthTokenGenerator;
-        private GetIamAuthTokenRequest rdsIamAuthTokenRequest;
         private Thread tokenThread;
         private BlockingQueue<PooledConnection> busyConnections;
         private BlockingQueue<PooledConnection> idleConnections;
+        private String host;
+        private int port;
+        private AWS4RdsIamTokenGenerator signer;
 
         public RdsIamAuthConnectionPool(PoolConfiguration prop) throws SQLException {
             super(prop);
@@ -83,11 +81,9 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
         protected void init(PoolConfiguration prop) throws SQLException {
             try {
                 final URI uri = new URI(prop.getUrl().substring(5)); // jdbc:
-                final String host = uri.getHost();
-                final int port = uri.getPort() > 0 ? uri.getPort() : DEFAULT_PORT;
-                final String region = host.endsWith(".rds.amazonaws.com") ? StringUtils.split(host, '.')[2] :  new DefaultAwsRegionProviderChain().getRegion();
-                this.rdsIamAuthTokenGenerator = getRdsIamAuthTokenGenerator(region);
-                this.rdsIamAuthTokenRequest = getIamAuthTokenRequest(host, port, prop.getUsername());
+                host = uri.getHost();
+                port = uri.getPort() > 0 ? uri.getPort() : DEFAULT_PORT;
+                signer = new AWS4RdsIamTokenGenerator();
                 updatePassword(prop);
 
                 final Properties props = prop.getDbProperties();
@@ -110,14 +106,6 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
             this.tokenThread = new Thread(this, "RdsIamAuthDataSourceTokenThread");
             this.tokenThread.setDaemon(true);
             this.tokenThread.start();
-        }
-
-        protected static GetIamAuthTokenRequest getIamAuthTokenRequest(String host, int port, String username) {
-            return GetIamAuthTokenRequest.builder().hostname(host).port(port).userName(username).build();
-        }
-
-        protected static RdsIamAuthTokenGenerator getRdsIamAuthTokenGenerator(String region) {
-            return RdsIamAuthTokenGenerator.builder().credentials(new DefaultAWSCredentialsProviderChain()).region(region).build();
         }
 
         @SuppressWarnings("unchecked")
@@ -166,7 +154,7 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
          * @param poolConfiguration
          */
         private void updatePassword(PoolConfiguration poolConfiguration) {
-            String token = rdsIamAuthTokenGenerator.getAuthToken(rdsIamAuthTokenRequest);
+            String token = signer.createDbAuthToken(host,port,poolConfiguration.getUsername(),new DefaultAWSCredentialsProviderChain().getCredentials());
             LOG.debug("Updated IAM token for connection pool");
             poolConfiguration.setPassword(token);
         }
