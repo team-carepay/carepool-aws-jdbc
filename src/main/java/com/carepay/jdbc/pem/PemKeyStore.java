@@ -1,10 +1,7 @@
 package com.carepay.jdbc.pem;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.security.Key;
 import java.security.KeyStoreException;
@@ -14,7 +11,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -22,16 +18,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 /**
- * KeyStore which supports reading .PEM files.
+ * KeyStore which supports reading .PEM files. Only loads entries once to improve performance.
  */
 public class PemKeyStore extends KeyStoreSpi {
-    private static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----"; // TODO: replace with regex
-    private static final String END_CERT = "-----END CERTIFICATE-----";
-    private static final Pattern COMMENT_OR_EMPTY = Pattern.compile("^\\s*(#|$)");
-    protected Map<String, Entry> entries = new HashMap<>();
+    protected static Map<String, Entry> entries = new HashMap<>();
 
     protected Optional<Entry> getEntry(final String alias) {
         return Optional.of(this.entries.get(alias));
@@ -109,40 +101,11 @@ public class PemKeyStore extends KeyStoreSpi {
 
     @Override
     public void engineLoad(final InputStream stream, final char[] password)
-            throws IOException, CertificateException {
-        if (stream != null) {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
-                CertificateFactory cf = CertificateFactory.getInstance("X.509");
-                List<Certificate> certificateChain = new ArrayList<>();
-                byte[] bytes;
-                while ((bytes = readCert(reader)) != null) {
-                    certificateChain.addAll(cf.generateCertificates(new ByteArrayInputStream(bytes)));
-                }
-                entries.put("pem",new Entry(null, certificateChain));
-            }
+            throws CertificateException {
+        if (stream != null && entries.isEmpty()) {
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            entries.put("pem", new Entry(null, new ArrayList<>(cf.generateCertificates(stream))));
         }
-    }
-
-    private byte[] readCert(BufferedReader reader) throws IOException {
-        final StringBuilder sb = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null && !BEGIN_CERT.equals(line)) {
-            if (!COMMENT_OR_EMPTY.matcher(line).matches()) {
-                throw new IllegalArgumentException(line);
-            }
-        }
-        if (line == null) {
-            return null;
-        }
-        while ((line = reader.readLine()) != null && !END_CERT.equals(line)) {
-            if (!COMMENT_OR_EMPTY.matcher(line).matches()) {
-                sb.append(line);
-            }
-        }
-        if (line == null) {
-            throw new IllegalStateException("END CERTIFICATE not found");
-        }
-        return Base64.getDecoder().decode(sb.toString());
     }
 
     @Override
