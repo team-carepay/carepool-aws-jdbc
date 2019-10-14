@@ -17,10 +17,14 @@ import com.zaxxer.hikari.HikariDataSource;
  */
 public class RdsIamHikariDataSource extends HikariDataSource implements RdsIamConstants {
 
-    public static final int DEFAULT_PORT = 3306;
+    private static final int DEFAULT_PORT = 3306;
+    private static final ZoneId UTC = ZoneId.of("UTC");
 
     static Clock clock = Clock.systemDefaultZone();
 
+    /**
+     * Registers the PEM keystore provider
+     */
     static {
         Security.addProvider(new PemKeyStoreProvider());
     }
@@ -32,6 +36,9 @@ public class RdsIamHikariDataSource extends HikariDataSource implements RdsIamCo
     private AWS4RdsIamTokenGenerator rdsIamTokenGenerator;
     private AWSCredentialsProvider credentialsProvider;
 
+    /**
+     * Default constructor, uses the default AWS provider chain.
+     */
     public RdsIamHikariDataSource() {
         this(new AWS4RdsIamTokenGenerator(), new DefaultAWSCredentialsProviderChain());
     }
@@ -61,9 +68,8 @@ public class RdsIamHikariDataSource extends HikariDataSource implements RdsIamCo
             host = uri.getHost();
             port = uri.getPort() > 0 ? uri.getPort() : DEFAULT_PORT;
         }
-        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneId.of("UTC"));
+        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), UTC);
         if (this.expiryDate == null || expiryDate.isBefore(now)) {
-            credentialsProvider = new DefaultAWSCredentialsProviderChain();
             this.authToken = rdsIamTokenGenerator.createDbAuthToken(host, port, getUsername(), credentialsProvider.getCredentials());
             this.expiryDate = now.plusMinutes(10); // Token expires after 15 min, so renew after 10 min
         }
