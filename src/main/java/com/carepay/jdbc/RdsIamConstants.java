@@ -1,7 +1,7 @@
 package com.carepay.jdbc;
 
 public interface RdsIamConstants {
-     String CA_BUNDLE_URL = "https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem";
+    String CA_BUNDLE_URL = "classpath:/rds-combined-ca-bundle.pem";
     String REQUIRE_SSL = "requireSSL";
     String VERIFY_SERVER_CERTIFICATE = "verifyServerCertificate";
     String SSL_MODE = "sslMode";

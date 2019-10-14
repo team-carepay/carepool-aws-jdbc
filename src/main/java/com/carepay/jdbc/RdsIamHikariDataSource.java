@@ -11,8 +11,8 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import com.amazonaws.services.rds.auth.GetIamAuthTokenRequest;
 import com.amazonaws.services.rds.auth.RdsIamAuthTokenGenerator;
+import com.carepay.jdbc.pem.PemKeyStoreProvider;
 import com.zaxxer.hikari.HikariDataSource;
-import de.dentrassi.crypto.pem.PemKeyStoreProvider;
 import org.apache.commons.lang3.StringUtils;
 
 /**

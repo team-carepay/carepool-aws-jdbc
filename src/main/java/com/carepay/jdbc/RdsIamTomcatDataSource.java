@@ -13,7 +13,7 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import com.amazonaws.services.rds.auth.GetIamAuthTokenRequest;
 import com.amazonaws.services.rds.auth.RdsIamAuthTokenGenerator;
-import de.dentrassi.crypto.pem.PemKeyStoreProvider;
+import com.carepay.jdbc.pem.PemKeyStoreProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.apache.tomcat.jdbc.pool.PoolConfiguration;
