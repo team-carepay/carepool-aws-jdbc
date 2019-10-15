@@ -10,6 +10,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.function.Consumer;
 
 import com.carepay.jdbc.aws.AWS4RdsIamTokenGenerator;
+import com.carepay.jdbc.aws.AWSCredentialsProvider;
 import com.carepay.jdbc.aws.DefaultAWSCredentialsProviderChain;
 import com.carepay.jdbc.pem.PemKeyStoreProvider;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
@@ -25,12 +26,29 @@ import org.slf4j.LoggerFactory;
 public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSource implements RdsIamConstants {
 
     private static final Logger LOG = LoggerFactory.getLogger(RdsIamTomcatDataSource.class);
+    private final AWS4RdsIamTokenGenerator tokenGenerator;
+    private final AWSCredentialsProvider credentialsProvider;
 
     static long DEFAULT_TIMEOUT = 600000L; // renew every 10 minutes, since token expires after 15m
     public static final int DEFAULT_PORT = 3306;
 
     static {
         Security.addProvider(new PemKeyStoreProvider());
+    }
+
+    public RdsIamTomcatDataSource() {
+        this(new AWS4RdsIamTokenGenerator(), new DefaultAWSCredentialsProviderChain());
+    }
+
+    public RdsIamTomcatDataSource(AWS4RdsIamTokenGenerator tokenGenerator, AWSCredentialsProvider credentialsProvider) {
+        this.tokenGenerator = tokenGenerator;
+        this.credentialsProvider = credentialsProvider;
+    }
+
+    public RdsIamTomcatDataSource(AWS4RdsIamTokenGenerator tokenGenerator, AWSCredentialsProvider credentialsProvider, PoolConfiguration poolProperties) {
+        super(poolProperties);
+        this.tokenGenerator = tokenGenerator;
+        this.credentialsProvider = credentialsProvider;
     }
 
     /**
@@ -59,14 +77,13 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
     /**
      * Extends the default pool. This implementation will generate a new IAM token every 10 min.
      */
-    public static class RdsIamAuthConnectionPool extends ConnectionPool implements Runnable {
+    public class RdsIamAuthConnectionPool extends ConnectionPool implements Runnable {
 
         private Thread tokenThread;
         private BlockingQueue<PooledConnection> busyConnections;
         private BlockingQueue<PooledConnection> idleConnections;
         private String host;
         private int port;
-        private AWS4RdsIamTokenGenerator tokenGenerator;
 
         public RdsIamAuthConnectionPool(PoolConfiguration prop) throws SQLException {
             super(prop);
@@ -83,7 +100,6 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
                 final URI uri = new URI(prop.getUrl().substring(5)); // jdbc:
                 host = uri.getHost();
                 port = uri.getPort() > 0 ? uri.getPort() : DEFAULT_PORT;
-                tokenGenerator = new AWS4RdsIamTokenGenerator();
                 updatePassword(prop);
 
                 final Properties props = prop.getDbProperties();
@@ -128,8 +144,8 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
             try {
                 do {
                     // wait for 10 minutes, then recreate the token
-                    Thread.sleep(DEFAULT_TIMEOUT);
-                    updatePassword(getPoolProperties());
+                    Thread.sleep(poolProperties.getRemoveAbandonedTimeout()*10);
+                    updatePassword(poolProperties);
                     idleConnections.forEach(consumer);
                     busyConnections.forEach(consumer);
                 } while (this.tokenThread != null);
@@ -154,9 +170,10 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
          * @param poolConfiguration
          */
         private void updatePassword(PoolConfiguration poolConfiguration) {
-            String token = tokenGenerator.createDbAuthToken(host,port,poolConfiguration.getUsername(),new DefaultAWSCredentialsProviderChain().getCredentials());
-            LOG.debug("Updated IAM token for connection pool");
+            String token = tokenGenerator.createDbAuthToken(host,port,poolConfiguration.getUsername(),credentialsProvider.getCredentials());
+            System.out.println("Updated IAM token for connection pool "+token);
             poolConfiguration.setPassword(token);
         }
     }
+
 }

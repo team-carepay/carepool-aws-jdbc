@@ -7,6 +7,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 
 import com.carepay.jdbc.aws.AWS4RdsIamTokenGenerator;
+import com.carepay.jdbc.aws.AWSCredentials;
+import com.carepay.jdbc.aws.AWSCredentialsProvider;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.junit.After;
 import org.junit.Before;
@@ -17,6 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class RdsIamTomcatDataSourceTest {
 
     private RdsIamTomcatDataSource rdsIamTomcatDataSource;
+    private Clock brokenClock;
+    private AWS4RdsIamTokenGenerator tokenGenerator;
+    private AWSCredentialsProvider credentialsProvider;
 
     private void init() {
         rdsIamTomcatDataSource.setDriverClassName(H2Driver.class.getName());
@@ -26,20 +31,24 @@ public class RdsIamTomcatDataSourceTest {
 
     @Before
     public void setUp() {
-        System.setProperty("aws.accessKeyId", "IAMKEYINSTANCE");
-        System.setProperty("aws.secretAccessKey", "asdfqwertypolly");
-        System.setProperty("aws.token", "ZYX12345");
-        AWS4RdsIamTokenGenerator.clock = Clock.fixed(Instant.parse("2018-09-19T16:02:42.00Z"), ZoneId.of("UTC"));
-        rdsIamTomcatDataSource = new RdsIamTomcatDataSource();
+        this.brokenClock = Clock.fixed(Instant.parse("2018-09-19T16:02:42.00Z"), ZoneId.of("UTC"));
+        tokenGenerator = new AWS4RdsIamTokenGenerator(brokenClock) {
+            @Override
+            protected Instant getCurrentDateTime() {
+                return brokenClock.instant();
+            }
+        };
+        credentialsProvider = () -> new AWSCredentials("IAMKEYINSTANCE", "asdfqwertypolly", "ZYX12345");
+        rdsIamTomcatDataSource = new RdsIamTomcatDataSource(tokenGenerator, credentialsProvider) {
+            protected void sleep() throws InterruptedException {
+            }
+        };
         init();
     }
 
     @After
     public void tearDown() {
         rdsIamTomcatDataSource.close();
-        System.clearProperty("aws.accessKeyId");
-        System.clearProperty("aws.secretAccessKey");
-        System.clearProperty("aws.token");
     }
 
     @Test
@@ -50,10 +59,10 @@ public class RdsIamTomcatDataSourceTest {
 
     @Test
     public void testBackgroundThreadCreatesNewPassword() throws SQLException {
-        RdsIamTomcatDataSource.DEFAULT_TIMEOUT = 1000L;
-        rdsIamTomcatDataSource = new RdsIamTomcatDataSource() {
+        rdsIamTomcatDataSource = new RdsIamTomcatDataSource(tokenGenerator,credentialsProvider) {
             @Override
             protected synchronized ConnectionPool createPoolImpl() throws SQLException {
+                poolProperties.setRemoveAbandonedTimeout(10);
                 pool = new RdsIamAuthConnectionPool(poolProperties) {
                     @Override
                     protected void createBackgroundThread() {
@@ -65,8 +74,8 @@ public class RdsIamTomcatDataSourceTest {
         init();
         try (Connection c = rdsIamTomcatDataSource.getConnection()) {
             final String password = rdsIamTomcatDataSource.getPoolProperties().getPassword();
-            AWS4RdsIamTokenGenerator.clock = Clock.fixed(Instant.parse("2019-10-20T16:02:42.00Z"), ZoneId.of("UTC"));
-            ((RdsIamTomcatDataSource.RdsIamAuthConnectionPool) rdsIamTomcatDataSource.getPool()).run();
+            brokenClock = Clock.fixed(Instant.parse("2019-10-20T16:02:42.00Z"), ZoneId.of("UTC"));
+            ((Runnable)rdsIamTomcatDataSource.getPool()).run();
             assertThat(rdsIamTomcatDataSource.getPoolProperties().getPassword()).isNotEqualTo(password);
         }
     }

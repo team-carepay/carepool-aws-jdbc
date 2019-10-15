@@ -5,6 +5,7 @@ import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
@@ -32,7 +33,15 @@ public class AWS4RdsIamTokenGenerator {
      * for performance reasons we cache the signing key, TTL is 24 hours
      */
     private static final Map<String, SigningKey> keyCache = new WeakHashMap<>();
-    public static Clock clock = Clock.systemUTC();
+    private final Clock clock;
+
+    public AWS4RdsIamTokenGenerator() {
+        this(Clock.systemUTC());
+    }
+
+    public AWS4RdsIamTokenGenerator(Clock clock) {
+        this.clock = clock;
+    }
 
     protected static MessageDigest getMessageDigest() throws NoSuchAlgorithmException {
         return MessageDigest.getInstance("SHA-256");
@@ -90,7 +99,7 @@ public class AWS4RdsIamTokenGenerator {
     public String createDbAuthToken(final String host, final int port, final String dbuser, final AWSCredentials credentials) {
         final String[] parts = host.split("\\."); // e.g. xxxx.yyyy.eu-west-1.rds.amazonaws.com
         final String region = parts[2]; // extract region from hostname
-        final String dateTimeStr = AWS_DATE_FMT.format(clock.instant());
+        final String dateTimeStr = AWS_DATE_FMT.format(getCurrentDateTime());
         final String dateStr = dateTimeStr.substring(0, 8);
         StringBuilder queryBuilder = new StringBuilder("Action=connect")
             .append("&DBUser=").append(dbuser)
@@ -123,6 +132,10 @@ public class AWS4RdsIamTokenGenerator {
         } catch (GeneralSecurityException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    protected Instant getCurrentDateTime() {
+        return clock.instant();
     }
 
     /**

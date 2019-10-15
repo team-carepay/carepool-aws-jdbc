@@ -14,8 +14,8 @@ public class AWS4RdsIamTokenGeneratorTest {
 
     @Before
     public void setUp() {
-        AWS4RdsIamTokenGenerator.clock = Clock.fixed(Instant.parse("2018-09-19T16:02:42.00Z"), ZoneId.of("UTC"));
-        tokenGenerator = new AWS4RdsIamTokenGenerator();
+        Clock clock = Clock.fixed(Instant.parse("2018-09-19T16:02:42.00Z"), ZoneId.of("UTC"));
+        tokenGenerator = new AWS4RdsIamTokenGenerator(clock);
     }
 
     @Test
