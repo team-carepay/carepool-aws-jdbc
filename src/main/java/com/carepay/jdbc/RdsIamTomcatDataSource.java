@@ -66,7 +66,7 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
         private BlockingQueue<PooledConnection> idleConnections;
         private String host;
         private int port;
-        private AWS4RdsIamTokenGenerator signer;
+        private AWS4RdsIamTokenGenerator tokenGenerator;
 
         public RdsIamAuthConnectionPool(PoolConfiguration prop) throws SQLException {
             super(prop);
@@ -83,7 +83,7 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
                 final URI uri = new URI(prop.getUrl().substring(5)); // jdbc:
                 host = uri.getHost();
                 port = uri.getPort() > 0 ? uri.getPort() : DEFAULT_PORT;
-                signer = new AWS4RdsIamTokenGenerator();
+                tokenGenerator = new AWS4RdsIamTokenGenerator();
                 updatePassword(prop);
 
                 final Properties props = prop.getDbProperties();
@@ -154,7 +154,7 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
          * @param poolConfiguration
          */
         private void updatePassword(PoolConfiguration poolConfiguration) {
-            String token = signer.createDbAuthToken(host,port,poolConfiguration.getUsername(),new DefaultAWSCredentialsProviderChain().getCredentials());
+            String token = tokenGenerator.createDbAuthToken(host,port,poolConfiguration.getUsername(),new DefaultAWSCredentialsProviderChain().getCredentials());
             LOG.debug("Updated IAM token for connection pool");
             poolConfiguration.setPassword(token);
         }
