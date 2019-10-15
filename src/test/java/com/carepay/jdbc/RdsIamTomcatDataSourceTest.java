@@ -1,7 +1,12 @@
 package com.carepay.jdbc;
 
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 
+import com.carepay.jdbc.aws.AWS4RdsIamTokenGenerator;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.junit.After;
 import org.junit.Before;
@@ -24,6 +29,7 @@ public class RdsIamTomcatDataSourceTest {
         System.setProperty("aws.accessKeyId", "IAMKEYINSTANCE");
         System.setProperty("aws.secretAccessKey", "asdfqwertypolly");
         System.setProperty("aws.token", "ZYX12345");
+        AWS4RdsIamTokenGenerator.clock = Clock.fixed(Instant.parse("2018-09-19T16:02:42.00Z"), ZoneId.of("UTC"));
         rdsIamTomcatDataSource = new RdsIamTomcatDataSource();
         init();
     }
@@ -57,9 +63,11 @@ public class RdsIamTomcatDataSourceTest {
             }
         };
         init();
-        rdsIamTomcatDataSource.getConnection();
-        final String password = rdsIamTomcatDataSource.getPoolProperties().getPassword();
-        ((RdsIamTomcatDataSource.RdsIamAuthConnectionPool)rdsIamTomcatDataSource.getPool()).run();
-        assertThat(rdsIamTomcatDataSource.getPoolProperties().getPassword()).isNotEqualTo(password);
+        try (Connection c = rdsIamTomcatDataSource.getConnection()) {
+            final String password = rdsIamTomcatDataSource.getPoolProperties().getPassword();
+            AWS4RdsIamTokenGenerator.clock = Clock.fixed(Instant.parse("2019-10-20T16:02:42.00Z"), ZoneId.of("UTC"));
+            ((RdsIamTomcatDataSource.RdsIamAuthConnectionPool) rdsIamTomcatDataSource.getPool()).run();
+            assertThat(rdsIamTomcatDataSource.getPoolProperties().getPassword()).isNotEqualTo(password);
+        }
     }
 }

@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 
+import com.carepay.jdbc.aws.AWS4RdsIamTokenGenerator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,7 +20,9 @@ public class RdsIamHikariDataSourceTest {
         System.setProperty("aws.accessKeyId", "IAMKEYINSTANCE");
         System.setProperty("aws.secretAccessKey", "asdfqwertypolly");
         System.setProperty("aws.token", "ZYX12345");
-        RdsIamHikariDataSource.clock = Clock.fixed(Instant.parse("2018-09-19T16:02:42.00Z"), ZoneId.of("UTC"));
+        final Clock brokenClock = Clock.fixed(Instant.parse("2018-09-19T16:02:42.00Z"), ZoneId.of("UTC"));
+        RdsIamHikariDataSource.clock = brokenClock;
+        AWS4RdsIamTokenGenerator.clock = brokenClock;
         rdsIamHikariDataSource = new RdsIamHikariDataSource();
         rdsIamHikariDataSource.setDriverClassName(H2Driver.class.getName());
         rdsIamHikariDataSource.setJdbcUrl("jdbc:mysql://mydb.random.eu-west-1.rds.amazonaws.com/database");
@@ -50,7 +53,9 @@ public class RdsIamHikariDataSourceTest {
     @Test
     public void getPasswordIsDifferentWhenExpired() throws InterruptedException {
         String password = rdsIamHikariDataSource.getPassword();
-        RdsIamHikariDataSource.clock = Clock.fixed(Instant.parse("2019-09-19T16:02:42.00Z"), ZoneId.of("UTC"));
+        final Clock brokenClock = Clock.fixed(Instant.parse("2019-10-20T16:02:42.00Z"), ZoneId.of("UTC"));
+        RdsIamHikariDataSource.clock = brokenClock;
+        AWS4RdsIamTokenGenerator.clock = brokenClock;
         Thread.sleep(1000); // to ensure AWS4 signature is using a different timestamp
         String password2 = rdsIamHikariDataSource.getPassword();
         assertThat(password).isNotEqualTo(password2);

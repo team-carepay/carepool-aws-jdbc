@@ -32,7 +32,7 @@ public class AWS4RdsIamTokenGenerator {
      * for performance reasons we cache the signing key, TTL is 24 hours
      */
     private static final Map<String, SigningKey> keyCache = new WeakHashMap<>();
-    protected static Clock clock = Clock.systemUTC();
+    public static Clock clock = Clock.systemUTC();
 
     protected static MessageDigest getMessageDigest() throws NoSuchAlgorithmException {
         return MessageDigest.getInstance("SHA-256");
