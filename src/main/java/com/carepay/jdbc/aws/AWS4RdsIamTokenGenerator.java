@@ -33,6 +33,9 @@ public class AWS4RdsIamTokenGenerator {
      * for performance reasons we cache the signing key, TTL is 24 hours
      */
     private static final Map<String, SigningKey> keyCache = new WeakHashMap<>();
+    private static final String RDS_DB = "rds-db";
+    private static final String AWS_4_REQUEST = "aws4_request";
+    private static final String EMPTY_STRING_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
     private final Clock clock;
 
     public AWS4RdsIamTokenGenerator() {
@@ -43,6 +46,7 @@ public class AWS4RdsIamTokenGenerator {
         this.clock = clock;
     }
 
+    @SuppressWarnings("squid:S00112")
     protected static MessageDigest getMessageDigest() throws NoSuchAlgorithmException {
         return MessageDigest.getInstance("SHA-256");
     }
@@ -104,7 +108,7 @@ public class AWS4RdsIamTokenGenerator {
         StringBuilder queryBuilder = new StringBuilder("Action=connect")
             .append("&DBUser=").append(dbuser)
             .append("&X-Amz-Algorithm=AWS4-HMAC-SHA256")
-            .append("&X-Amz-Credential=").append(String.join("%2F", credentials.getAccessKeyId(), dateStr, region, "rds-db", "aws4_request"))
+            .append("&X-Amz-Credential=").append(String.join("%2F", credentials.getAccessKeyId(), dateStr, region, RDS_DB, AWS_4_REQUEST))
             .append("&X-Amz-Date=").append(dateTimeStr)
             .append("&X-Amz-Expires=900")
             .append("&X-Amz-SignedHeaders=host");
@@ -115,14 +119,14 @@ public class AWS4RdsIamTokenGenerator {
                 "host:" + host+":"+port,
                 "", // indicates end of signed headers
                 "host", // signed header names
-                "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"); // sha256 hash of empty string
+                EMPTY_STRING_SHA256); // sha256 hash of empty string
         try {
             final String stringToSign = String.join("\n",
                     "AWS4-HMAC-SHA256", // algorithm
                     dateTimeStr, // timestamp
-                    String.join("/", dateStr, region, "rds-db", "aws4_request"), // scope
+                    String.join("/", dateStr, region, RDS_DB, AWS_4_REQUEST), // scope
                     hash(canonicalRequestStr)); // hash of the request
-            final byte[] signingKeyBytes = getSigningKey(credentials, "rds-db", region, dateStr);
+            final byte[] signingKeyBytes = getSigningKey(credentials, RDS_DB, region, dateStr);
             final byte[] signature = sign(stringToSign, signingKeyBytes);
             queryBuilder.append("&X-Amz-Signature=").append(hex(signature));
             if (credentials.getToken() != null) {
@@ -154,7 +158,7 @@ public class AWS4RdsIamTokenGenerator {
             final byte[] kDate = sign(dateStr, kSecret);
             final byte[] kRegion = sign(region, kDate);
             final byte[] kService = sign(service, kRegion);
-            final byte[] signingKeyBytes = sign("aws4_request", kService);
+            final byte[] signingKeyBytes = sign(AWS_4_REQUEST, kService);
             signingKey = new SigningKey(dateStr, signingKeyBytes);
             keyCache.put(cacheKey, signingKey);
         }

@@ -62,7 +62,6 @@ public class RdsIamTomcatDataSourceTest {
         rdsIamTomcatDataSource = new RdsIamTomcatDataSource(tokenGenerator,credentialsProvider) {
             @Override
             protected synchronized ConnectionPool createPoolImpl() throws SQLException {
-                poolProperties.setRemoveAbandonedTimeout(10);
                 pool = new RdsIamAuthConnectionPool(poolProperties) {
                     @Override
                     protected void createBackgroundThread() {
@@ -75,6 +74,7 @@ public class RdsIamTomcatDataSourceTest {
         try (Connection c = rdsIamTomcatDataSource.getConnection()) {
             final String password = rdsIamTomcatDataSource.getPoolProperties().getPassword();
             brokenClock = Clock.fixed(Instant.parse("2019-10-20T16:02:42.00Z"), ZoneId.of("UTC"));
+            RdsIamTomcatDataSource.DEFAULT_TIMEOUT = 10L;
             ((Runnable)rdsIamTomcatDataSource.getPool()).run();
             assertThat(rdsIamTomcatDataSource.getPoolProperties().getPassword()).isNotEqualTo(password);
         }

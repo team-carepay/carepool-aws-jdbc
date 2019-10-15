@@ -28,6 +28,9 @@ public class EC2MetadataUtils {
     }
     private static Map<String, String> metaData;
 
+    private EC2MetadataUtils() {
+    }
+
     public static String getInstanceId() {
         return getMetaData().get("instanceId");
     }

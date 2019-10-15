@@ -21,10 +21,11 @@ import java.util.Optional;
  * KeyStore which supports reading .PEM files. Only loads entries once to improve performance.
  */
 public class PemKeyStore extends KeyStoreSpi {
+    private static final String UNSUPPORTED_OPERATION = "Unsupported operation";
     protected static Map<String, Entry> entries = new HashMap<>();
 
     protected Optional<Entry> getEntry(final String alias) {
-        return Optional.ofNullable(this.entries.get(alias));
+        return Optional.ofNullable(entries.get(alias));
     }
 
     @Override
@@ -58,7 +59,7 @@ public class PemKeyStore extends KeyStoreSpi {
 
     @Override
     public Enumeration<String> engineAliases() {
-        final Iterator<String> keys = this.entries.keySet().iterator();
+        final Iterator<String> keys = entries.keySet().iterator();
         return new Enumeration<String>() {
             @Override
             public String nextElement() {
@@ -74,12 +75,12 @@ public class PemKeyStore extends KeyStoreSpi {
 
     @Override
     public boolean engineContainsAlias(final String alias) {
-        return this.entries.containsKey(alias);
+        return entries.containsKey(alias);
     }
 
     @Override
     public int engineSize() {
-        return this.entries.size();
+        return entries.size();
     }
 
     @Override
@@ -89,7 +90,7 @@ public class PemKeyStore extends KeyStoreSpi {
 
     @Override
     public String engineGetCertificateAlias(final Certificate cert) {
-        for (final Map.Entry<String, Entry> entry : this.entries.entrySet()) {
+        for (final Map.Entry<String, Entry> entry : entries.entrySet()) {
             if (cert == entry.getValue().getCertificate()) {
                 return entry.getKey();
             }
@@ -108,27 +109,27 @@ public class PemKeyStore extends KeyStoreSpi {
 
     @Override
     public void engineSetKeyEntry(String alias, Key key, char[] password, Certificate[] chain) {
-        throw new UnsupportedOperationException("Unsupported operation");
+        throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
     }
 
     @Override
     public void engineSetKeyEntry(String alias, byte[] key, Certificate[] chain) {
-        throw new UnsupportedOperationException("Unsupported operation");
+        throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
     }
 
     @Override
     public void engineSetCertificateEntry(String alias, Certificate cert) {
-        throw new UnsupportedOperationException("Unsupported operation");
+        throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
     }
 
     @Override
     public void engineDeleteEntry(String alias) {
-        throw new UnsupportedOperationException("Unsupported operation");
+        throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
     }
 
     @Override
     public void engineStore(OutputStream stream, char[] password) {
-        throw new UnsupportedOperationException("Unsupported operation");
+        throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
     }
 
     private static final class Entry {

@@ -144,7 +144,7 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
             try {
                 do {
                     // wait for 10 minutes, then recreate the token
-                    Thread.sleep(poolProperties.getRemoveAbandonedTimeout()*10);
+                    Thread.sleep(DEFAULT_TIMEOUT);
                     updatePassword(poolProperties);
                     idleConnections.forEach(consumer);
                     busyConnections.forEach(consumer);
@@ -171,7 +171,6 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
          */
         private void updatePassword(PoolConfiguration poolConfiguration) {
             String token = tokenGenerator.createDbAuthToken(host,port,poolConfiguration.getUsername(),credentialsProvider.getCredentials());
-            System.out.println("Updated IAM token for connection pool "+token);
             poolConfiguration.setPassword(token);
         }
     }
