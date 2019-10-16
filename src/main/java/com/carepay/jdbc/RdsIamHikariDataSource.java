@@ -18,6 +18,7 @@ import static com.carepay.jdbc.RdsIamConstants.REQUIRE_SSL;
 import static com.carepay.jdbc.RdsIamConstants.SSL_MODE;
 import static com.carepay.jdbc.RdsIamConstants.TRUST_CERTIFICATE_KEY_STORE_TYPE;
 import static com.carepay.jdbc.RdsIamConstants.TRUST_CERTIFICATE_KEY_STORE_URL;
+import static com.carepay.jdbc.RdsIamConstants.USE_SSL;
 import static com.carepay.jdbc.RdsIamConstants.VERIFY_CA;
 import static com.carepay.jdbc.RdsIamConstants.VERIFY_SERVER_CERTIFICATE;
 
@@ -58,24 +59,12 @@ public class RdsIamHikariDataSource extends HikariDataSource {
         this.rdsIamTokenGenerator = rdsIamTokenGenerator;
         this.credentialsProvider = credentialsProvider;
         this.clock = clock;
+        addDataSourceProperty(USE_SSL, "true");     // for MySQL 5.x and before
         addDataSourceProperty(REQUIRE_SSL, "true"); // for MySQL 5.x and before
         addDataSourceProperty(VERIFY_SERVER_CERTIFICATE, "true");
-        setSslModeVerifyCA();
+        addDataSourceProperty(SSL_MODE, VERIFY_CA);       // for MySQL 8.x and higher
         addDataSourceProperty(TRUST_CERTIFICATE_KEY_STORE_URL, CA_BUNDLE_URL);
         addDataSourceProperty(TRUST_CERTIFICATE_KEY_STORE_TYPE, PEM);
-    }
-
-    /**
-     * This method will set sslMode to 'VERIFY_CA', but that mode is only supported by MySQL Connector/J 8.x and up
-     */
-    @SuppressWarnings("unchecked")
-    private void setSslModeVerifyCA() {
-        try {
-            Class<Enum> c = (Class<Enum>) Class.forName("com.mysql.cj.conf.PropertyDefinitions.SslMode");
-            Enum.valueOf(c,"VERIFY_CA");
-            addDataSourceProperty(SSL_MODE, VERIFY_CA); // for MySQL 8.x and higher
-        } catch (ClassNotFoundException | IllegalArgumentException e) { // NOSONAR
-        }
     }
 
     /**
