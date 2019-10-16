@@ -12,10 +12,19 @@ import com.carepay.jdbc.aws.DefaultAWSCredentialsProviderChain;
 import com.carepay.jdbc.pem.PemKeyStoreProvider;
 import com.zaxxer.hikari.HikariDataSource;
 
+import static com.carepay.jdbc.RdsIamConstants.CA_BUNDLE_URL;
+import static com.carepay.jdbc.RdsIamConstants.PEM;
+import static com.carepay.jdbc.RdsIamConstants.REQUIRE_SSL;
+import static com.carepay.jdbc.RdsIamConstants.SSL_MODE;
+import static com.carepay.jdbc.RdsIamConstants.TRUST_CERTIFICATE_KEY_STORE_TYPE;
+import static com.carepay.jdbc.RdsIamConstants.TRUST_CERTIFICATE_KEY_STORE_URL;
+import static com.carepay.jdbc.RdsIamConstants.VERIFY_CA;
+import static com.carepay.jdbc.RdsIamConstants.VERIFY_SERVER_CERTIFICATE;
+
 /**
  * DataSource based on Hikari connection pool that supports IAM authentication to RDS
  */
-public class RdsIamHikariDataSource extends HikariDataSource implements RdsIamConstants {
+public class RdsIamHikariDataSource extends HikariDataSource {
 
     private static final int DEFAULT_PORT = 3306;
     private static final ZoneId UTC = ZoneId.of("UTC");

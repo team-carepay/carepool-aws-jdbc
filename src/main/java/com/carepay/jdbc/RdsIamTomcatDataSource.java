@@ -20,10 +20,19 @@ import org.apache.tomcat.jdbc.pool.PooledConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.carepay.jdbc.RdsIamConstants.CA_BUNDLE_URL;
+import static com.carepay.jdbc.RdsIamConstants.PEM;
+import static com.carepay.jdbc.RdsIamConstants.REQUIRE_SSL;
+import static com.carepay.jdbc.RdsIamConstants.SSL_MODE;
+import static com.carepay.jdbc.RdsIamConstants.TRUST_CERTIFICATE_KEY_STORE_TYPE;
+import static com.carepay.jdbc.RdsIamConstants.TRUST_CERTIFICATE_KEY_STORE_URL;
+import static com.carepay.jdbc.RdsIamConstants.VERIFY_CA;
+import static com.carepay.jdbc.RdsIamConstants.VERIFY_SERVER_CERTIFICATE;
+
 /**
  * DataSource based on Tomcat connection pool that supports IAM authentication to RDS
  */
-public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSource implements RdsIamConstants {
+public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSource {
 
     private static final Logger LOG = LoggerFactory.getLogger(RdsIamTomcatDataSource.class);
     private final AWS4RdsIamTokenGenerator tokenGenerator;
