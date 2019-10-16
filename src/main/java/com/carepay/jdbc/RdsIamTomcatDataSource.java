@@ -114,7 +114,7 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
                 final Properties props = prop.getDbProperties();
                 props.setProperty(REQUIRE_SSL,"true"); // for MySQL 5.x and before
                 props.setProperty(VERIFY_SERVER_CERTIFICATE, "true");
-                props.setProperty(SSL_MODE,VERIFY_CA); // for MySQL 8.x and higher
+                setSslModeVerifyCA(props);
                 props.setProperty(TRUST_CERTIFICATE_KEY_STORE_URL,CA_BUNDLE_URL);
                 props.setProperty(TRUST_CERTIFICATE_KEY_STORE_TYPE, PEM);
 
@@ -124,6 +124,20 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
                 createBackgroundThread();
             } catch (URISyntaxException e) {
                 throw new RuntimeException(e.getMessage());
+            }
+        }
+
+        /**
+         * This method will set sslMode to 'VERIFY_CA', but that mode is only supported by MySQL Connector/J 8.x and up
+         * @param props
+         */
+        @SuppressWarnings("unchecked")
+        private void setSslModeVerifyCA(Properties props) {
+            try {
+                Class<Enum> c = (Class<Enum>) Class.forName("com.mysql.cj.conf.PropertyDefinitions.SslMode");
+                Enum.valueOf(c,"VERIFY_CA");
+                props.put(SSL_MODE, VERIFY_CA); // for MySQL 8.x and higher
+            } catch (ClassNotFoundException | IllegalArgumentException e) { // NOSONAR
             }
         }
 

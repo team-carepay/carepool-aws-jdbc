@@ -60,9 +60,22 @@ public class RdsIamHikariDataSource extends HikariDataSource {
         this.clock = clock;
         addDataSourceProperty(REQUIRE_SSL, "true"); // for MySQL 5.x and before
         addDataSourceProperty(VERIFY_SERVER_CERTIFICATE, "true");
-        addDataSourceProperty(SSL_MODE, VERIFY_CA); // for MySQL 8.x and higher
+        setSslModeVerifyCA();
         addDataSourceProperty(TRUST_CERTIFICATE_KEY_STORE_URL, CA_BUNDLE_URL);
         addDataSourceProperty(TRUST_CERTIFICATE_KEY_STORE_TYPE, PEM);
+    }
+
+    /**
+     * This method will set sslMode to 'VERIFY_CA', but that mode is only supported by MySQL Connector/J 8.x and up
+     */
+    @SuppressWarnings("unchecked")
+    private void setSslModeVerifyCA() {
+        try {
+            Class<Enum> c = (Class<Enum>) Class.forName("com.mysql.cj.conf.PropertyDefinitions.SslMode");
+            Enum.valueOf(c,"VERIFY_CA");
+            addDataSourceProperty(SSL_MODE, VERIFY_CA); // for MySQL 8.x and higher
+        } catch (ClassNotFoundException | IllegalArgumentException e) { // NOSONAR
+        }
     }
 
     /**
