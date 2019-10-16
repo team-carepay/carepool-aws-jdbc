@@ -26,6 +26,7 @@ import static com.carepay.jdbc.RdsIamConstants.REQUIRE_SSL;
 import static com.carepay.jdbc.RdsIamConstants.SSL_MODE;
 import static com.carepay.jdbc.RdsIamConstants.TRUST_CERTIFICATE_KEY_STORE_TYPE;
 import static com.carepay.jdbc.RdsIamConstants.TRUST_CERTIFICATE_KEY_STORE_URL;
+import static com.carepay.jdbc.RdsIamConstants.USE_SSL;
 import static com.carepay.jdbc.RdsIamConstants.VERIFY_CA;
 import static com.carepay.jdbc.RdsIamConstants.VERIFY_SERVER_CERTIFICATE;
 
@@ -112,9 +113,10 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
                 updatePassword(prop);
 
                 final Properties props = prop.getDbProperties();
-                props.setProperty(REQUIRE_SSL,"true"); // for MySQL 5.x and before
+                props.setProperty(USE_SSL,"true");      // for MySQL 5.x and before
+                props.setProperty(REQUIRE_SSL,"true");  // for MySQL 5.x and before
                 props.setProperty(VERIFY_SERVER_CERTIFICATE, "true");
-                props.setProperty(SSL_MODE,VERIFY_CA); // for MySQL 8.x and higher
+                props.setProperty(SSL_MODE, VERIFY_CA); // for MySQL 8.x and higher
                 props.setProperty(TRUST_CERTIFICATE_KEY_STORE_URL,CA_BUNDLE_URL);
                 props.setProperty(TRUST_CERTIFICATE_KEY_STORE_TYPE, PEM);
 

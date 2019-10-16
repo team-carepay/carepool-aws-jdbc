@@ -18,6 +18,7 @@ import static com.carepay.jdbc.RdsIamConstants.REQUIRE_SSL;
 import static com.carepay.jdbc.RdsIamConstants.SSL_MODE;
 import static com.carepay.jdbc.RdsIamConstants.TRUST_CERTIFICATE_KEY_STORE_TYPE;
 import static com.carepay.jdbc.RdsIamConstants.TRUST_CERTIFICATE_KEY_STORE_URL;
+import static com.carepay.jdbc.RdsIamConstants.USE_SSL;
 import static com.carepay.jdbc.RdsIamConstants.VERIFY_CA;
 import static com.carepay.jdbc.RdsIamConstants.VERIFY_SERVER_CERTIFICATE;
 
@@ -58,9 +59,10 @@ public class RdsIamHikariDataSource extends HikariDataSource {
         this.rdsIamTokenGenerator = rdsIamTokenGenerator;
         this.credentialsProvider = credentialsProvider;
         this.clock = clock;
+        addDataSourceProperty(USE_SSL, "true");     // for MySQL 5.x and before
         addDataSourceProperty(REQUIRE_SSL, "true"); // for MySQL 5.x and before
         addDataSourceProperty(VERIFY_SERVER_CERTIFICATE, "true");
-        addDataSourceProperty(SSL_MODE, VERIFY_CA); // for MySQL 8.x and higher
+        addDataSourceProperty(SSL_MODE, VERIFY_CA);       // for MySQL 8.x and higher
         addDataSourceProperty(TRUST_CERTIFICATE_KEY_STORE_URL, CA_BUNDLE_URL);
         addDataSourceProperty(TRUST_CERTIFICATE_KEY_STORE_TYPE, PEM);
     }
