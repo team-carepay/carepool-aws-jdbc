@@ -1,7 +1,14 @@
 package com.carepay.jdbc;
 
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 
+import com.carepay.jdbc.aws.AWS4RdsIamTokenGenerator;
+import com.carepay.jdbc.aws.AWSCredentials;
+import com.carepay.jdbc.aws.AWSCredentialsProvider;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.junit.After;
 import org.junit.Before;
@@ -12,6 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class RdsIamTomcatDataSourceTest {
 
     private RdsIamTomcatDataSource rdsIamTomcatDataSource;
+    private Clock brokenClock;
+    private AWS4RdsIamTokenGenerator tokenGenerator;
+    private AWSCredentialsProvider credentialsProvider;
 
     private void init() {
         rdsIamTomcatDataSource.setDriverClassName(H2Driver.class.getName());
@@ -21,7 +31,18 @@ public class RdsIamTomcatDataSourceTest {
 
     @Before
     public void setUp() {
-        rdsIamTomcatDataSource = new RdsIamTomcatDataSource();
+        this.brokenClock = Clock.fixed(Instant.parse("2018-09-19T16:02:42.00Z"), ZoneId.of("UTC"));
+        tokenGenerator = new AWS4RdsIamTokenGenerator(brokenClock) {
+            @Override
+            protected Instant getCurrentDateTime() {
+                return brokenClock.instant();
+            }
+        };
+        credentialsProvider = () -> new AWSCredentials("IAMKEYINSTANCE", "asdfqwertypolly", "ZYX12345");
+        rdsIamTomcatDataSource = new RdsIamTomcatDataSource(tokenGenerator, credentialsProvider) {
+            protected void sleep() throws InterruptedException {
+            }
+        };
         init();
     }
 
@@ -38,8 +59,7 @@ public class RdsIamTomcatDataSourceTest {
 
     @Test
     public void testBackgroundThreadCreatesNewPassword() throws SQLException {
-        RdsIamTomcatDataSource.DEFAULT_TIMEOUT = 1000L;
-        rdsIamTomcatDataSource = new RdsIamTomcatDataSource() {
+        rdsIamTomcatDataSource = new RdsIamTomcatDataSource(tokenGenerator,credentialsProvider) {
             @Override
             protected synchronized ConnectionPool createPoolImpl() throws SQLException {
                 pool = new RdsIamAuthConnectionPool(poolProperties) {
@@ -51,9 +71,12 @@ public class RdsIamTomcatDataSourceTest {
             }
         };
         init();
-        rdsIamTomcatDataSource.getConnection();
-        final String password = rdsIamTomcatDataSource.getPoolProperties().getPassword();
-        ((RdsIamTomcatDataSource.RdsIamAuthConnectionPool)rdsIamTomcatDataSource.getPool()).run();
-        assertThat(rdsIamTomcatDataSource.getPoolProperties().getPassword()).isNotEqualTo(password);
+        try (Connection c = rdsIamTomcatDataSource.getConnection()) {
+            final String password = rdsIamTomcatDataSource.getPoolProperties().getPassword();
+            brokenClock = Clock.fixed(Instant.parse("2019-10-20T16:02:42.00Z"), ZoneId.of("UTC"));
+            RdsIamTomcatDataSource.DEFAULT_TIMEOUT = 10L;
+            ((Runnable)rdsIamTomcatDataSource.getPool()).run();
+            assertThat(rdsIamTomcatDataSource.getPoolProperties().getPassword()).isNotEqualTo(password);
+        }
     }
 }
