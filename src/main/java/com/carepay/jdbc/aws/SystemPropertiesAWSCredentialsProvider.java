@@ -6,7 +6,7 @@ public class SystemPropertiesAWSCredentialsProvider implements AWSCredentialsPro
         return new AWSCredentials(
                 System.getProperty("aws.accessKeyId"),
                 System.getProperty("aws.secretAccessKey"),
-                System.getProperty("aws.token")
+                System.getProperty("aws.sessionToken")
         );
     }
 }

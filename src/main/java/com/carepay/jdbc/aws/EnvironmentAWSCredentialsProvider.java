@@ -10,7 +10,7 @@ public class EnvironmentAWSCredentialsProvider implements AWSCredentialsProvider
         return new AWSCredentials(
                 System.getenv("AWS_ACCESS_KEY_ID"),
                 System.getenv("AWS_SECRET_ACCESS_KEY"),
-                System.getenv("AWS_TOKEN")
+                System.getenv("AWS_SESSION_TOKEN")
         );
     }
 }
