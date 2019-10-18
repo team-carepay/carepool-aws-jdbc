@@ -9,10 +9,10 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,25 +52,15 @@ public class PemKeyStore extends KeyStoreSpi {
     public Date engineGetCreationDate(final String alias) {
         return getEntry(alias)
                 .map(Entry::getCertificate)
-                .map(cert -> cert instanceof X509Certificate ? (X509Certificate) cert : null)
+                .filter(cert -> cert instanceof X509Certificate)
+                .map(cert -> (X509Certificate) cert)
                 .map(X509Certificate::getNotBefore)
                 .orElse(null);
     }
 
     @Override
     public Enumeration<String> engineAliases() {
-        final Iterator<String> keys = entries.keySet().iterator();
-        return new Enumeration<String>() {
-            @Override
-            public String nextElement() {
-                return keys.next();
-            }
-
-            @Override
-            public boolean hasMoreElements() {
-                return keys.hasNext();
-            }
-        };
+        return Collections.enumeration(entries.keySet());
     }
 
     @Override
