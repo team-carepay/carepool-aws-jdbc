@@ -1,6 +1,8 @@
 package com.carepay.jdbc.aws;
 
 public class AWSCredentials {
+    public static final AWSCredentials NULL = new AWSCredentials(null, null, null);
+
     private String accessKeyId;
     private String secretAccessKey;
     private String token;
@@ -25,5 +27,9 @@ public class AWSCredentials {
 
     public String getToken() {
         return token;
+    }
+
+    public boolean hasToken() {
+        return this.token != null;
     }
 }

@@ -1,5 +1,6 @@
 package com.carepay.jdbc.aws;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -58,6 +59,26 @@ public class EC2MetadataUtils {
             }
         } catch (IOException | JsonException e) { // NOSONAR
             return Collections.emptyMap();
+        }
+    }
+
+
+    public static String queryMetaDataAsString(final URL url) {
+        try {
+            final HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection.setConnectTimeout(1000);
+            urlConnection.setReadTimeout(1000);
+            try (final InputStream is = urlConnection.getInputStream();
+                 final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                final byte[] buf = new byte[4096];
+                int n;
+                while ((n = is.read(buf)) > 0) {
+                    baos.write(buf, 0, n);
+                }
+                return baos.toString();
+            }
+        } catch (IOException e) { // NOSONAR
+            return null;
         }
     }
 }
