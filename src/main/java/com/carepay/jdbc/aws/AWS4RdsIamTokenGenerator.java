@@ -16,8 +16,7 @@ import javax.crypto.spec.SecretKeySpec;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Supports signing AWS RDS requests.
- * See https://docs.aws.amazon.com/general/latest/gr/signing_aws_api_requests.html
+ * Supports signing AWS RDS requests. See https://docs.aws.amazon.com/general/latest/gr/signing_aws_api_requests.html
  * and https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.Connecting.Java.html
  */
 public class AWS4RdsIamTokenGenerator {
@@ -28,7 +27,9 @@ public class AWS4RdsIamTokenGenerator {
     private static final DateTimeFormatter AWS_DATE_FMT = DateTimeFormatter
             .ofPattern("yyyyMMdd'T'HHmmss'Z'")
             .withZone(UTC);
-    private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
+    private static final char[] HEX_DIGITS_LOWER = "0123456789abcdef".toCharArray();
+    private static final char[] HEX_DIGITS_UPPER = "0123456789ABCDEF".toCharArray();
+
     /**
      * for performance reasons we cache the signing key, TTL is 24 hours
      */
@@ -64,9 +65,13 @@ public class AWS4RdsIamTokenGenerator {
     protected static String hex(byte[] bytes) {
         final StringBuilder sb = new StringBuilder(2 * bytes.length);
         for (byte b : bytes) {
-            sb.append(HEX_DIGITS[(b >> 4) & 0xf]).append(HEX_DIGITS[b & 0xf]);
+            sb.append(HEX_DIGITS_LOWER[(b >> 4) & 0xf]).append(HEX_DIGITS_LOWER[b & 0xf]);
         }
         return sb.toString();
+    }
+
+    protected static void appendHex(StringBuilder sb, char ch) {
+        sb.append('%').append(HEX_DIGITS_LOWER[(ch >> 4) & 0xf]).append(HEX_DIGITS_LOWER[ch & 0xf]);
     }
 
     /**
@@ -92,11 +97,27 @@ public class AWS4RdsIamTokenGenerator {
         return mac.doFinal(value.getBytes(UTF_8));
     }
 
+    public static String uriEncode(CharSequence input) {
+        StringBuilder result = new StringBuilder();
+        final int len = input.length();
+        for (int i = 0; i < len; i++) {
+            char ch = input.charAt(i);
+            if ((ch >= 'A' && ch <= 'Z')
+                    || (ch >= 'a' && ch <= 'z')
+                    || (ch >= '0' && ch <= '9')
+                    || ch == '_' || ch == '-' || ch == '~' || ch == '.') {
+                result.append(ch);
+            } else {
+                result.append('%').append(HEX_DIGITS_UPPER[(ch >> 4) & 0xf]).append(HEX_DIGITS_UPPER[ch & 0xf]);
+            }
+        }
+        return result.toString();
+    }
+
     /**
-     *
-     * @param host database hostname (dbname.xxxx.eu-west-1.rds.amazonaws.com)
-     * @param port database port (MySQL uses 3306)
-     * @param dbuser database username
+     * @param host        database hostname (dbname.xxxx.eu-west-1.rds.amazonaws.com)
+     * @param port        database port (MySQL uses 3306)
+     * @param dbuser      database username
      * @param credentials the credentials to use for signing
      * @return the DB token
      */
@@ -106,21 +127,21 @@ public class AWS4RdsIamTokenGenerator {
         final String dateTimeStr = AWS_DATE_FMT.format(getCurrentDateTime());
         final String dateStr = dateTimeStr.substring(0, 8);
         StringBuilder queryBuilder = new StringBuilder("Action=connect")
-            .append("&DBUser=").append(dbuser)
-            .append("&X-Amz-Algorithm=AWS4-HMAC-SHA256")
-            .append("&X-Amz-Credential=").append(String.join("%2F", credentials.getAccessKeyId(), dateStr, region, RDS_DB, AWS_4_REQUEST))
-            .append("&X-Amz-Date=").append(dateTimeStr)
-            .append("&X-Amz-Expires=900");
+                .append("&DBUser=").append(dbuser)
+                .append("&X-Amz-Algorithm=AWS4-HMAC-SHA256")
+                .append("&X-Amz-Credential=").append(String.join("%2F", credentials.getAccessKeyId(), dateStr, region, RDS_DB, AWS_4_REQUEST))
+                .append("&X-Amz-Date=").append(dateTimeStr)
+                .append("&X-Amz-Expires=900");
         if (credentials.hasToken()) {
-            queryBuilder.append("&X-Amz-Security-Token=").append(credentials.getToken());
+            queryBuilder.append("&X-Amz-Security-Token=").append(uriEncode(credentials.getToken()));
         }
         queryBuilder
-            .append("&X-Amz-SignedHeaders=host");
+                .append("&X-Amz-SignedHeaders=host");
         final String canonicalRequestStr = String.join("\n",
                 "GET",
                 "/", // path
                 queryBuilder.toString(),
-                "host:" + host+":"+port,
+                "host:" + host + ":" + port,
                 "", // indicates end of signed headers
                 "host", // signed header names
                 EMPTY_STRING_SHA256); // sha256 hash of empty string
