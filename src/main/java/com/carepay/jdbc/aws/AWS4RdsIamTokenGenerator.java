@@ -110,7 +110,11 @@ public class AWS4RdsIamTokenGenerator {
             .append("&X-Amz-Algorithm=AWS4-HMAC-SHA256")
             .append("&X-Amz-Credential=").append(String.join("%2F", credentials.getAccessKeyId(), dateStr, region, RDS_DB, AWS_4_REQUEST))
             .append("&X-Amz-Date=").append(dateTimeStr)
-            .append("&X-Amz-Expires=900")
+            .append("&X-Amz-Expires=900");
+        if (credentials.hasToken()) {
+            queryBuilder.append("&X-Amz-Security-Token=").append(credentials.getToken());
+        }
+        queryBuilder
             .append("&X-Amz-SignedHeaders=host");
         final String canonicalRequestStr = String.join("\n",
                 "GET",
@@ -129,9 +133,6 @@ public class AWS4RdsIamTokenGenerator {
             final byte[] signingKeyBytes = getSigningKey(credentials, RDS_DB, region, dateStr);
             final byte[] signature = sign(stringToSign, signingKeyBytes);
             queryBuilder.append("&X-Amz-Signature=").append(hex(signature));
-            if (credentials.getToken() != null) {
-                queryBuilder.append("&X-Amz-Security-Token").append(credentials.getToken());
-            }
             return host + ":" + port + "/?" + queryBuilder.toString();
         } catch (GeneralSecurityException e) {
             throw new IllegalStateException(e);
