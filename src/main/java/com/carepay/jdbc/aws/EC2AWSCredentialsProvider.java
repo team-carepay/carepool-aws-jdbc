@@ -18,7 +18,7 @@ public class EC2AWSCredentialsProvider implements AWSCredentialsProvider {
     protected static Clock clock = Clock.systemUTC();
     private static final URL SECURITY_CREDENTIALS_URL;
     private static final String ROLE;
-    private AWSCredentials lastCredentials;
+    private AWSCredentials lastCredentials = AWSCredentials.NULL;
     private LocalDateTime expiryDate;
 
     static {

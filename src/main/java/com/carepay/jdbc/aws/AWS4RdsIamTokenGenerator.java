@@ -6,7 +6,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -14,13 +13,13 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.time.ZoneOffset.UTC;
 
 /**
  * Supports signing AWS RDS requests. See https://docs.aws.amazon.com/general/latest/gr/signing_aws_api_requests.html
  * and https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.Connecting.Java.html
  */
 public class AWS4RdsIamTokenGenerator {
-    private static final ZoneId UTC = ZoneId.of("UTC");
     /**
      * the date-format used by AWS
      */
