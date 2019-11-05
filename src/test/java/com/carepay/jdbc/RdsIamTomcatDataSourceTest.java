@@ -4,24 +4,24 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneId;
 
-import com.carepay.jdbc.aws.AWS4RdsIamTokenGenerator;
-import com.carepay.jdbc.aws.AWSCredentials;
-import com.carepay.jdbc.aws.AWSCredentialsProvider;
+import com.carepay.aws.AWS4Signer;
+import com.carepay.aws.AWSCredentials;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
 
 public class RdsIamTomcatDataSourceTest {
 
     private RdsIamTomcatDataSource rdsIamTomcatDataSource;
     private Clock brokenClock;
-    private AWS4RdsIamTokenGenerator tokenGenerator;
-    private AWSCredentialsProvider credentialsProvider;
+    private AWS4Signer tokenGenerator;
 
     private void init() {
         rdsIamTomcatDataSource.setDriverClassName(H2Driver.class.getName());
@@ -31,18 +31,11 @@ public class RdsIamTomcatDataSourceTest {
 
     @Before
     public void setUp() {
-        this.brokenClock = Clock.fixed(Instant.parse("2018-09-19T16:02:42.00Z"), ZoneId.of("UTC"));
-        tokenGenerator = new AWS4RdsIamTokenGenerator(brokenClock) {
-            @Override
-            protected Instant getCurrentDateTime() {
-                return brokenClock.instant();
-            }
-        };
-        credentialsProvider = () -> new AWSCredentials("IAMKEYINSTANCE", "asdfqwertypolly", "ZYX12345");
-        rdsIamTomcatDataSource = new RdsIamTomcatDataSource(tokenGenerator, credentialsProvider) {
-            protected void sleep() throws InterruptedException {
-            }
-        };
+        RdsIamTomcatDataSource.DEFAULT_TIMEOUT = 10L;
+        this.brokenClock = mock(Clock.class);
+        when(brokenClock.instant()).thenReturn(Instant.parse("2018-09-19T16:02:42.00Z"));
+        tokenGenerator = new AWS4Signer(brokenClock, () -> new AWSCredentials("IAMKEYINSTANCE", "asdfqwertypolly", "ZYX12345"));
+        rdsIamTomcatDataSource = new RdsIamTomcatDataSource(tokenGenerator);
         init();
     }
 
@@ -59,7 +52,7 @@ public class RdsIamTomcatDataSourceTest {
 
     @Test
     public void testBackgroundThreadCreatesNewPassword() throws SQLException {
-        rdsIamTomcatDataSource = new RdsIamTomcatDataSource(tokenGenerator,credentialsProvider) {
+        rdsIamTomcatDataSource = new RdsIamTomcatDataSource(tokenGenerator) {
             @Override
             protected synchronized ConnectionPool createPoolImpl() throws SQLException {
                 pool = new RdsIamAuthConnectionPool(poolProperties) {
@@ -73,9 +66,9 @@ public class RdsIamTomcatDataSourceTest {
         init();
         try (Connection c = rdsIamTomcatDataSource.getConnection()) {
             final String password = rdsIamTomcatDataSource.getPoolProperties().getPassword();
-            brokenClock = Clock.fixed(Instant.parse("2019-10-20T16:02:42.00Z"), ZoneId.of("UTC"));
-            RdsIamTomcatDataSource.DEFAULT_TIMEOUT = 10L;
-            ((Runnable)rdsIamTomcatDataSource.getPool()).run();
+            reset(brokenClock);
+            when(brokenClock.instant()).thenReturn(Instant.parse("2019-10-20T16:02:42.00Z"));
+            ((Runnable) rdsIamTomcatDataSource.getPool()).run();
             assertThat(rdsIamTomcatDataSource.getPoolProperties().getPassword()).isNotEqualTo(password);
         }
     }

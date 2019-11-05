@@ -28,7 +28,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.cliftonlabs:json-simple:3.1.0'
+    implementation 'com.carepay:carepool-aws:1.0.0'
 
     compileOnly 'com.zaxxer:HikariCP:3.2.0'
     compileOnly 'org.apache.tomcat:tomcat-jdbc:9.0.21'

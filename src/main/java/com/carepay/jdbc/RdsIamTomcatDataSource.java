@@ -9,9 +9,7 @@ import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Consumer;
 
-import com.carepay.jdbc.aws.AWS4RdsIamTokenGenerator;
-import com.carepay.jdbc.aws.AWSCredentialsProvider;
-import com.carepay.jdbc.aws.DefaultAWSCredentialsProviderChain;
+import com.carepay.aws.AWS4Signer;
 import com.carepay.jdbc.pem.PemKeyStoreProvider;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.apache.tomcat.jdbc.pool.PoolConfiguration;
@@ -35,36 +33,33 @@ import static com.carepay.jdbc.RdsIamConstants.VERIFY_SERVER_CERTIFICATE;
  */
 public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSource {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RdsIamTomcatDataSource.class);
-    private final AWS4RdsIamTokenGenerator tokenGenerator;
-    private final AWSCredentialsProvider credentialsProvider;
-
-    static long DEFAULT_TIMEOUT = 600000L; // renew every 10 minutes, since token expires after 15m
     public static final int DEFAULT_PORT = 3306;
+    private static final Logger LOG = LoggerFactory.getLogger(RdsIamTomcatDataSource.class);
+    static long DEFAULT_TIMEOUT = 600000L; // renew every 10 minutes, since token expires after 15m
 
     static {
         Security.addProvider(new PemKeyStoreProvider());
     }
 
+    private final AWS4Signer tokenGenerator;
+
     public RdsIamTomcatDataSource() {
-        this(new AWS4RdsIamTokenGenerator(), new DefaultAWSCredentialsProviderChain());
+        this(new AWS4Signer());
     }
 
-    public RdsIamTomcatDataSource(AWS4RdsIamTokenGenerator tokenGenerator, AWSCredentialsProvider credentialsProvider) {
+    public RdsIamTomcatDataSource(AWS4Signer tokenGenerator) {
         this.tokenGenerator = tokenGenerator;
-        this.credentialsProvider = credentialsProvider;
     }
 
-    public RdsIamTomcatDataSource(AWS4RdsIamTokenGenerator tokenGenerator, AWSCredentialsProvider credentialsProvider, PoolConfiguration poolProperties) {
+    public RdsIamTomcatDataSource(AWS4Signer tokenGenerator, PoolConfiguration poolProperties) {
         super(poolProperties);
         this.tokenGenerator = tokenGenerator;
-        this.credentialsProvider = credentialsProvider;
     }
 
     /**
      * Creates a new Connection Pool once. Overridden so we can change the underlying pool.
+     *
      * @return the cached pool or the newly created pool.
-     * @throws SQLException
      */
     @Override
     public ConnectionPool createPool() throws SQLException {
@@ -73,9 +68,6 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
 
     /**
      * Creates a new RDS IAM backed pool.
-     *
-     * @return
-     * @throws SQLException
      */
     protected synchronized ConnectionPool createPoolImpl() throws SQLException {
         if (pool == null) {
@@ -101,8 +93,8 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
 
         /**
          * Initializes the pool.
+         *
          * @param prop the pool configuration
-         * @throws SQLException
          */
         @Override
         protected void init(PoolConfiguration prop) throws SQLException {
@@ -113,11 +105,11 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
                 updatePassword(prop);
 
                 final Properties props = prop.getDbProperties();
-                props.setProperty(USE_SSL,"true");      // for MySQL 5.x and before
-                props.setProperty(REQUIRE_SSL,"true");  // for MySQL 5.x and before
+                props.setProperty(USE_SSL, "true");      // for MySQL 5.x and before
+                props.setProperty(REQUIRE_SSL, "true");  // for MySQL 5.x and before
                 props.setProperty(VERIFY_SERVER_CERTIFICATE, "true");
                 props.setProperty(SSL_MODE, VERIFY_CA); // for MySQL 8.x and higher
-                props.setProperty(TRUST_CERTIFICATE_KEY_STORE_URL,CA_BUNDLE_URL);
+                props.setProperty(TRUST_CERTIFICATE_KEY_STORE_URL, CA_BUNDLE_URL);
                 props.setProperty(TRUST_CERTIFICATE_KEY_STORE_TYPE, PEM);
 
                 super.init(prop);
@@ -140,9 +132,9 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
             try {
                 Field queueField = ConnectionPool.class.getDeclaredField(fieldName);
                 queueField.setAccessible(true);
-                return (BlockingQueue<PooledConnection>)queueField.get(this);
+                return (BlockingQueue<PooledConnection>) queueField.get(this);
             } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new IllegalStateException(e.getMessage(),e);
+                throw new IllegalStateException(e.getMessage(), e);
             }
         }
 
@@ -161,7 +153,7 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
                     busyConnections.forEach(consumer);
                 } while (this.tokenThread != null);
             } catch (InterruptedException e) {
-                LOG.trace("Interrupted",e);
+                LOG.trace("Interrupted", e);
                 Thread.currentThread().interrupt();
             }
         }
@@ -178,10 +170,9 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
 
         /**
          * Updates the password in the pool by generating a new token
-         * @param poolConfiguration
          */
         private void updatePassword(PoolConfiguration poolConfiguration) {
-            String token = tokenGenerator.createDbAuthToken(host,port,poolConfiguration.getUsername(),credentialsProvider.getCredentials());
+            String token = tokenGenerator.createDbAuthToken(host, port, poolConfiguration.getUsername());
             poolConfiguration.setPassword(token);
         }
     }

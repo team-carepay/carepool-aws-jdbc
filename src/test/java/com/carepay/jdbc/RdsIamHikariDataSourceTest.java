@@ -2,40 +2,31 @@ package com.carepay.jdbc;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 
-import com.carepay.jdbc.aws.AWS4RdsIamTokenGenerator;
-import com.carepay.jdbc.aws.AWSCredentials;
-import com.carepay.jdbc.aws.AWSCredentialsProvider;
+import com.carepay.aws.AWS4Signer;
+import com.carepay.aws.AWSCredentials;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
 
 public class RdsIamHikariDataSourceTest {
 
     private RdsIamHikariDataSource rdsIamHikariDataSource;
     private Clock brokenClock;
+    private AWSCredentials credentials;
 
     @Before
     public void setUp() {
-        AWSCredentials credentials = new AWSCredentials("IAMKEYINSTANCE", "asdfqwertypolly", "ZYX12345");
-        AWSCredentialsProvider credentialsProvider = () -> credentials;
-        brokenClock = Clock.fixed(Instant.parse("2018-09-19T16:02:42.00Z"), ZoneId.of("UTC"));
-        AWS4RdsIamTokenGenerator tokenGenerator = new AWS4RdsIamTokenGenerator(brokenClock) {
-            @Override
-            protected Instant getCurrentDateTime() {
-                return brokenClock.instant();
-            }
-        };
-        rdsIamHikariDataSource = new RdsIamHikariDataSource(tokenGenerator,credentialsProvider, brokenClock) {
-            @Override
-            protected LocalDateTime getCurrentDateTime() {
-                return LocalDateTime.ofInstant(brokenClock.instant(), ZoneId.of("UTC"));
-            }
-        };
+        brokenClock = mock(Clock.class);
+        when(brokenClock.instant()).thenReturn(Instant.parse("2018-09-19T16:02:42.00Z"));
+        credentials = new AWSCredentials("IAMKEYINSTANCE", "asdfqwertypolly", "ZYX12345");
+        AWS4Signer tokenGenerator = new AWS4Signer(brokenClock, () -> credentials);
+        rdsIamHikariDataSource = new RdsIamHikariDataSource(tokenGenerator, brokenClock);
         rdsIamHikariDataSource.setDriverClassName(H2Driver.class.getName());
         rdsIamHikariDataSource.setJdbcUrl("jdbc:mysql://mydb.random.eu-west-1.rds.amazonaws.com/database");
         rdsIamHikariDataSource.setUsername("iamuser");
@@ -65,7 +56,8 @@ public class RdsIamHikariDataSourceTest {
     @Test
     public void getPasswordIsDifferentWhenExpired() throws InterruptedException {
         String password = rdsIamHikariDataSource.getPassword();
-        brokenClock = Clock.fixed(Instant.parse("2019-10-20T16:02:42.00Z"), ZoneId.of("UTC"));
+        reset(brokenClock);
+        when(brokenClock.instant()).thenReturn(Instant.parse("2019-10-20T16:02:42.00Z"));
         String password2 = rdsIamHikariDataSource.getPassword();
         assertThat(password).isNotEqualTo(password2);
     }
