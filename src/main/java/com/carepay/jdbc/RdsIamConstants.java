@@ -1,7 +1,6 @@
 package com.carepay.jdbc;
 
-public enum RdsIamConstants {
-    ;
+public enum RdsIamConstants {;
     public static final String CA_BUNDLE_URL = "classpath:/rds-combined-ca-bundle.pem";
     public static final String USE_SSL = "useSSL";
     public static final String REQUIRE_SSL = "requireSSL";

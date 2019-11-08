@@ -4,7 +4,6 @@ import java.net.URI;
 import java.security.Security;
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 
 import com.carepay.aws.AWS4Signer;
 import com.carepay.jdbc.pem.PemKeyStoreProvider;
@@ -19,6 +18,7 @@ import static com.carepay.jdbc.RdsIamConstants.TRUST_CERTIFICATE_KEY_STORE_URL;
 import static com.carepay.jdbc.RdsIamConstants.USE_SSL;
 import static com.carepay.jdbc.RdsIamConstants.VERIFY_CA;
 import static com.carepay.jdbc.RdsIamConstants.VERIFY_SERVER_CERTIFICATE;
+import static java.time.ZoneOffset.UTC;
 
 /**
  * DataSource based on Hikari connection pool that supports IAM authentication to RDS
@@ -26,9 +26,8 @@ import static com.carepay.jdbc.RdsIamConstants.VERIFY_SERVER_CERTIFICATE;
 public class RdsIamHikariDataSource extends HikariDataSource {
 
     private static final int DEFAULT_PORT = 3306;
-    private static final ZoneId UTC = ZoneId.of("UTC");
 
-    /**
+    /*
      * Registers the PEM keystore provider
      */
     static {
@@ -52,7 +51,7 @@ public class RdsIamHikariDataSource extends HikariDataSource {
     /**
      * RDS IAM authentication sends the token as a plaintext password. SSL must be enabled.
      */
-    public RdsIamHikariDataSource(final AWS4Signer rdsIamTokenGenerator, Clock clock) {
+    public RdsIamHikariDataSource(final AWS4Signer rdsIamTokenGenerator, final Clock clock) {
         this.rdsIamTokenGenerator = rdsIamTokenGenerator;
         this.clock = clock;
         addDataSourceProperty(USE_SSL, "true");     // for MySQL 5.x and before
@@ -66,7 +65,7 @@ public class RdsIamHikariDataSource extends HikariDataSource {
     /**
      * Gets the IAM token. Creates a new token when the token is expired.
      *
-     * @return the IAM RDS token
+     * @return the IAM RDS token.
      */
     @Override
     public String getPassword() {
@@ -75,10 +74,10 @@ public class RdsIamHikariDataSource extends HikariDataSource {
             host = uri.getHost();
             port = uri.getPort() > 0 ? uri.getPort() : DEFAULT_PORT;
         }
-        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), UTC);
+        final LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), UTC);
         if (this.expiryDate == null || expiryDate.isBefore(now)) {
             this.authToken = rdsIamTokenGenerator.createDbAuthToken(host, port, getUsername());
-            this.expiryDate = now.plusMinutes(10); // Token expires after 15 min, so renew after 10 min
+            this.expiryDate = now.plusMinutes(10L); // Token expires after 15 min, so renew after 10 min
         }
         return this.authToken;
     }
