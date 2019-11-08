@@ -5,6 +5,8 @@ import java.security.Security;
 import java.time.Clock;
 import java.time.LocalDateTime;
 
+import javax.annotation.PostConstruct;
+
 import com.carepay.aws.AWS4Signer;
 import com.carepay.jdbc.pem.PemKeyStoreProvider;
 import com.zaxxer.hikari.HikariDataSource;
@@ -27,33 +29,24 @@ public class RdsIamHikariDataSource extends HikariDataSource {
 
     private static final int DEFAULT_PORT = 3306;
 
-    /*
-     * Registers the PEM keystore provider
-     */
-    static {
-        Security.addProvider(new PemKeyStoreProvider());
-    }
-
-    private final AWS4Signer rdsIamTokenGenerator;
-    private final Clock clock;
+    AWS4Signer rdsIamTokenGenerator;
+    Clock clock;
     private String host;
     private int port;
     private LocalDateTime expiryDate;
     private String authToken;
-
-    /**
-     * Default constructor, uses the default AWS provider chain.
-     */
-    public RdsIamHikariDataSource() {
-        this(new AWS4Signer(), Clock.systemUTC());
-    }
+    private boolean managed;
 
     /**
      * RDS IAM authentication sends the token as a plaintext password. SSL must be enabled.
      */
-    public RdsIamHikariDataSource(final AWS4Signer rdsIamTokenGenerator, final Clock clock) {
-        this.rdsIamTokenGenerator = rdsIamTokenGenerator;
-        this.clock = clock;
+    @PostConstruct
+    public void managedStart() {
+        managed = true;
+        //Registers the PEM keystore provider
+        Security.addProvider(new PemKeyStoreProvider());
+        this.rdsIamTokenGenerator = new AWS4Signer();
+        this.clock = Clock.systemUTC();
         addDataSourceProperty(USE_SSL, "true");     // for MySQL 5.x and before
         addDataSourceProperty(REQUIRE_SSL, "true"); // for MySQL 5.x and before
         addDataSourceProperty(VERIFY_SERVER_CERTIFICATE, "true");
@@ -69,6 +62,9 @@ public class RdsIamHikariDataSource extends HikariDataSource {
      */
     @Override
     public String getPassword() {
+        if (!managed) {
+            return super.getPassword();
+        }
         if (host == null) {
             final URI uri = URI.create(this.getJdbcUrl().substring(5)); // jdbc:
             host = uri.getHost();
@@ -81,6 +77,5 @@ public class RdsIamHikariDataSource extends HikariDataSource {
         }
         return this.authToken;
     }
-
 }
 
