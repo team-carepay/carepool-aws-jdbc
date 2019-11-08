@@ -8,7 +8,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -93,7 +92,9 @@ public class PemKeyStore extends KeyStoreSpi {
             throws CertificateException {
         if (stream != null && entries.isEmpty()) {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            entries.put("pem", new Entry(null, new ArrayList<>(cf.generateCertificates(stream))));
+            cf.generateCertificates(stream).forEach( c -> {
+                entries.put("pem" + ((X509Certificate)c).getSerialNumber(), new Entry(null, Collections.singletonList(c)));
+            });
         }
     }
 

@@ -13,6 +13,7 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class PemKeyStoreTest {
+    private static final String PEM_KEY = "pem66";
     private PemKeyStore pemKeyStore;
 
     @Before
@@ -34,49 +35,49 @@ public class PemKeyStoreTest {
 
     @Test
     public void testEngineGetCertificateChain() {
-        Certificate[] certs = pemKeyStore.engineGetCertificateChain("pem");
-        assertThat(certs.length).isEqualTo(45);
+        Certificate[] certs = pemKeyStore.engineGetCertificateChain("pem66");
+        assertThat(certs.length).isEqualTo(1);
     }
 
     @Test
     public void testEngineGetCertificate() {
-        Certificate cert = pemKeyStore.engineGetCertificate("pem");
+        Certificate cert = pemKeyStore.engineGetCertificate("pem66");
         assertThat(cert).isNotNull();
-        assertThat(pemKeyStore.engineGetCertificateAlias(cert)).isEqualTo("pem");
+        assertThat(pemKeyStore.engineGetCertificateAlias(cert)).isEqualTo("pem66");
         assertThat(pemKeyStore.engineGetCertificateAlias(null)).isNull();
     }
 
     @Test
     public void testEngineIsKeyEntry() {
-        assertThat(pemKeyStore.engineIsKeyEntry("pem")).isFalse();
+        assertThat(pemKeyStore.engineIsKeyEntry("pem66")).isFalse();
     }
 
     @Test
     public void testGetAliases() {
         Enumeration<String> aliases = pemKeyStore.engineAliases();
         assertThat(aliases.hasMoreElements()).isTrue();
-        assertThat(aliases.nextElement()).isEqualTo("pem");
+        assertThat(aliases.nextElement()).isEqualTo("pem67");
     }
 
     @Test
     public void testEngineIsCertificateEntry() {
-        assertThat(pemKeyStore.engineIsCertificateEntry("pem")).isTrue();
+        assertThat(pemKeyStore.engineIsCertificateEntry("pem66")).isTrue();
     }
 
     @Test
     public void testEngineSize() {
-        assertThat(pemKeyStore.engineSize()).isEqualTo(1);
+        assertThat(pemKeyStore.engineSize()).isGreaterThan(1);
     }
 
     @Test
     public void testLastDate() {
-        assertThat(pemKeyStore.engineGetCreationDate("pem")).isEqualToIgnoringHours("2015-02-05");
+        assertThat(pemKeyStore.engineGetCreationDate("pem66")).isEqualToIgnoringHours("2015-02-05");
         assertThat(pemKeyStore.engineGetCreationDate("other")).isNull();
     }
 
     @Test
     public void testEngineContainsAlias() {
-        assertThat(pemKeyStore.engineContainsAlias("pem")).isTrue();
+        assertThat(pemKeyStore.engineContainsAlias("pem66")).isTrue();
         assertThat(pemKeyStore.engineContainsAlias("other")).isFalse();
     }
 
@@ -88,12 +89,12 @@ public class PemKeyStoreTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testEngineSetKeyEntryWithByteArray() {
-        pemKeyStore.engineSetKeyEntry("pem", null, null);
+        pemKeyStore.engineSetKeyEntry("pem66", null, null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testEngineSetCertificate() {
-        pemKeyStore.engineSetCertificateEntry("pem", null);
+        pemKeyStore.engineSetCertificateEntry(PEM_KEY, null);
     }
 
     @Test(expected = UnsupportedOperationException.class)
