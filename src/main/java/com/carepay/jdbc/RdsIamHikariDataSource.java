@@ -4,7 +4,6 @@ import java.net.URI;
 import java.security.Security;
 import java.time.Clock;
 import java.time.LocalDateTime;
-
 import javax.annotation.PostConstruct;
 
 import com.carepay.aws.AWS4Signer;
@@ -27,15 +26,28 @@ import static java.time.ZoneOffset.UTC;
  */
 public class RdsIamHikariDataSource extends HikariDataSource {
 
+    static {
+        Security.addProvider(new PemKeyStoreProvider());
+    }
+
     private static final int DEFAULT_PORT = 3306;
 
-    AWS4Signer rdsIamTokenGenerator;
-    Clock clock;
+    private final AWS4Signer signer;
+    private final Clock clock;
     private String host;
     private int port;
     private LocalDateTime expiryDate;
     private String authToken;
     private boolean managed;
+
+    public RdsIamHikariDataSource() {
+        this(new AWS4Signer(),Clock.systemUTC());
+    }
+
+    public RdsIamHikariDataSource(final AWS4Signer signer, final Clock clock) {
+        this.signer = signer;
+        this.clock = clock;
+    }
 
     /**
      * RDS IAM authentication sends the token as a plaintext password. SSL must be enabled.
@@ -43,10 +55,6 @@ public class RdsIamHikariDataSource extends HikariDataSource {
     @PostConstruct
     public void managedStart() {
         managed = true;
-        //Registers the PEM keystore provider
-        Security.addProvider(new PemKeyStoreProvider());
-        this.rdsIamTokenGenerator = new AWS4Signer();
-        this.clock = Clock.systemUTC();
         addDataSourceProperty(USE_SSL, "true");     // for MySQL 5.x and before
         addDataSourceProperty(REQUIRE_SSL, "true"); // for MySQL 5.x and before
         addDataSourceProperty(VERIFY_SERVER_CERTIFICATE, "true");
@@ -72,7 +80,7 @@ public class RdsIamHikariDataSource extends HikariDataSource {
         }
         final LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), UTC);
         if (this.expiryDate == null || expiryDate.isBefore(now)) {
-            this.authToken = rdsIamTokenGenerator.createDbAuthToken(host, port, getUsername());
+            this.authToken = signer.createDbAuthToken(host, port, getUsername());
             this.expiryDate = now.plusMinutes(10L); // Token expires after 15 min, so renew after 10 min
         }
         return this.authToken;

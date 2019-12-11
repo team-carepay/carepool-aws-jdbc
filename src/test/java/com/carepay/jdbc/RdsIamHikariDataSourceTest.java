@@ -25,15 +25,12 @@ public class RdsIamHikariDataSourceTest {
         brokenClock = mock(Clock.class);
         when(brokenClock.instant()).thenReturn(Instant.parse("2018-09-19T16:02:42.00Z"));
         credentials = new AWSCredentials("IAMKEYINSTANCE", "asdfqwertypolly", "ZYX12345");
-        rdsIamHikariDataSource = new RdsIamHikariDataSource();
+        AWS4Signer tokenGenerator = new AWS4Signer(brokenClock, () -> credentials);
+        rdsIamHikariDataSource = new RdsIamHikariDataSource(tokenGenerator, brokenClock);
         rdsIamHikariDataSource.setDriverClassName(H2Driver.class.getName());
         rdsIamHikariDataSource.setJdbcUrl("jdbc:mysql://mydb.random.eu-west-1.rds.amazonaws.com/database");
         rdsIamHikariDataSource.setUsername("iamuser");
         rdsIamHikariDataSource.managedStart();
-
-        rdsIamHikariDataSource.clock = brokenClock;
-        AWS4Signer tokenGenerator = new AWS4Signer(brokenClock, () -> credentials);
-        rdsIamHikariDataSource.rdsIamTokenGenerator = tokenGenerator;
     }
 
     @After
@@ -58,7 +55,7 @@ public class RdsIamHikariDataSourceTest {
     }
 
     @Test
-    public void getPasswordIsDifferentWhenExpired() throws InterruptedException {
+    public void getPasswordIsDifferentWhenExpired() {
         String password = rdsIamHikariDataSource.getPassword();
         reset(brokenClock);
         when(brokenClock.instant()).thenReturn(Instant.parse("2019-10-20T16:02:42.00Z"));

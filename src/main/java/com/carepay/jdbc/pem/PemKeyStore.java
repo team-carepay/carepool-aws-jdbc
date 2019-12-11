@@ -1,6 +1,5 @@
 package com.carepay.jdbc.pem;
 
-import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.Key;
@@ -93,7 +92,7 @@ public class PemKeyStore extends KeyStoreSpi {
     @Override
     public void engineLoad(final InputStream stream, final char[] password) throws CertificateException {
         if (stream != null && entries.isEmpty()) {
-            for (final Certificate c : CertificateFactory.getInstance("X.509").generateCertificates(new BufferedInputStream(stream))) {
+            for (final Certificate c : CertificateFactory.getInstance("X.509").generateCertificates(stream)) {
                 entries.put("pem" + ((X509Certificate) c).getSerialNumber(), new Entry(null, Collections.singletonList(c)));
             }
         }
