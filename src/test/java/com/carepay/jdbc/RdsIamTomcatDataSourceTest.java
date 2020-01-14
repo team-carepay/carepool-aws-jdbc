@@ -8,6 +8,7 @@ import java.time.Instant;
 import com.carepay.aws.AWS4Signer;
 import com.carepay.aws.AWSCredentials;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
+import org.apache.tomcat.jdbc.pool.PoolProperties;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,10 +53,11 @@ public class RdsIamTomcatDataSourceTest {
 
     @Test
     public void testBackgroundThreadCreatesNewPassword() throws SQLException {
-        rdsIamTomcatDataSource = new RdsIamTomcatDataSource(tokenGenerator) {
+        PoolProperties newPoolProperties = new PoolProperties();
+        rdsIamTomcatDataSource = new RdsIamTomcatDataSource(tokenGenerator, newPoolProperties) {
             @Override
             protected synchronized ConnectionPool createPoolImpl() throws SQLException {
-                pool = new RdsIamAuthConnectionPool(poolProperties) {
+                pool = new RdsIamAuthConnectionPool(newPoolProperties) {
                     @Override
                     protected void createBackgroundThread() {
                     }
@@ -64,6 +66,7 @@ public class RdsIamTomcatDataSourceTest {
             }
         };
         init();
+        rdsIamTomcatDataSource.setUrl("jdbc:mysql://mydb.random.eu-west-1.rds.amazonaws.com:3306/database");
         try (Connection c = rdsIamTomcatDataSource.getConnection()) {
             final String password = rdsIamTomcatDataSource.getPoolProperties().getPassword();
             reset(brokenClock);

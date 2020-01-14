@@ -1,7 +1,6 @@
 package com.carepay.jdbc;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -28,8 +27,8 @@ public interface RdsIamInitializer {
             return; // return when already installed
         }
         final String caBundleUrl = protocol + ":" + caBundlePath;
-        try (InputStream is = new URL(caBundleUrl).openStream()) {
-            // empty block
+        try {
+            new URL(caBundleUrl);
         } catch (MalformedURLException e) {
             URL.setURLStreamHandlerFactory((p) -> protocol.equals(p) ? new URLStreamHandler() {
                 @Override
@@ -41,8 +40,6 @@ public interface RdsIamInitializer {
                     return classpathUrl.openConnection();
                 }
             } : null);
-        } catch (IOException e) {
-            throw new IllegalStateException(e.getMessage(), e);
         }
     }
 }

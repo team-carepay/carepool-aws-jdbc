@@ -48,6 +48,7 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
     public RdsIamTomcatDataSource(AWS4Signer tokenGenerator, PoolConfiguration poolProperties) {
         super(poolProperties);
         this.tokenGenerator = tokenGenerator;
+        RdsIamInitializer.init();
     }
 
     /**
