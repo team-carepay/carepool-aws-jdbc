@@ -37,8 +37,8 @@ public class RdsIamInitializerTest {
             System.out.println("TestingCaBundleNotFound");
             RdsIamInitializer.init("classpath", "blabla");
             try (InputStream is = new URL("classpath:blegbleg").openStream()) {
+                fail();
             }
-            fail();
         } catch (IOException e) {
             assertThat(e.getMessage()).isEqualTo("Resource not found: classpath:blegbleg");
         }
