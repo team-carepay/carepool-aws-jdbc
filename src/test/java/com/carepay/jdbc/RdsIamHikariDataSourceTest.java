@@ -19,17 +19,19 @@ public class RdsIamHikariDataSourceTest {
     private RdsIamHikariDataSource rdsIamHikariDataSource;
     private Clock brokenClock;
     private AWSCredentials credentials;
+    private AWS4Signer tokenGenerator;
 
     @Before
     public void setUp() {
         brokenClock = mock(Clock.class);
         when(brokenClock.instant()).thenReturn(Instant.parse("2018-09-19T16:02:42.00Z"));
         credentials = new AWSCredentials("IAMKEYINSTANCE", "asdfqwertypolly", "ZYX12345");
-        AWS4Signer tokenGenerator = new AWS4Signer(brokenClock, () -> credentials);
+        tokenGenerator = new AWS4Signer(brokenClock, () -> credentials);
         rdsIamHikariDataSource = new RdsIamHikariDataSource(tokenGenerator, brokenClock);
         rdsIamHikariDataSource.setDriverClassName(H2Driver.class.getName());
         rdsIamHikariDataSource.setJdbcUrl("jdbc:mysql://mydb.random.eu-west-1.rds.amazonaws.com/database");
         rdsIamHikariDataSource.setUsername("iamuser");
+        rdsIamHikariDataSource.managedStart();
     }
 
     @After
@@ -54,11 +56,23 @@ public class RdsIamHikariDataSourceTest {
     }
 
     @Test
-    public void getPasswordIsDifferentWhenExpired() throws InterruptedException {
+    public void getPasswordIsDifferentWhenExpired() {
         String password = rdsIamHikariDataSource.getPassword();
         reset(brokenClock);
         when(brokenClock.instant()).thenReturn(Instant.parse("2019-10-20T16:02:42.00Z"));
         String password2 = rdsIamHikariDataSource.getPassword();
         assertThat(password).isNotEqualTo(password2);
+    }
+
+    @Test
+    public void unmanagedTest() {
+        rdsIamHikariDataSource = new RdsIamHikariDataSource(tokenGenerator, brokenClock);
+        rdsIamHikariDataSource.setDriverClassName(H2Driver.class.getName());
+        rdsIamHikariDataSource.setJdbcUrl("jdbc:mysql://mydb.random.eu-west-1.rds.amazonaws.com/database");
+        rdsIamHikariDataSource.setUsername("iamuser");
+        rdsIamHikariDataSource.setPassword("Secret123");
+        assertThat(rdsIamHikariDataSource.getPassword()).isEqualTo("Secret123");
+        rdsIamHikariDataSource.managedStart();
+        assertThat(rdsIamHikariDataSource.getPassword()).isEqualTo("mydb.random.eu-west-1.rds.amazonaws.com:3306/?Action=connect&DBUser=iamuser&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=IAMKEYINSTANCE%2F20180919%2Feu-west-1%2Frds-db%2Faws4_request&X-Amz-Date=20180919T160242Z&X-Amz-Expires=900&X-Amz-Security-Token=ZYX12345&X-Amz-SignedHeaders=host&X-Amz-Signature=e97dadda634d1efb530e381b8c5bccb10cf6ef824973cb28f44212cb2d6d24da");
     }
 }

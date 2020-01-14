@@ -2,15 +2,12 @@ package com.carepay.jdbc;
 
 import java.lang.reflect.Field;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.security.Security;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Consumer;
 
 import com.carepay.aws.AWS4Signer;
-import com.carepay.jdbc.pem.PemKeyStoreProvider;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.apache.tomcat.jdbc.pool.PoolConfiguration;
 import org.apache.tomcat.jdbc.pool.PoolUtilities;
@@ -37,10 +34,6 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
     private static final Logger LOG = LoggerFactory.getLogger(RdsIamTomcatDataSource.class);
     static long DEFAULT_TIMEOUT = 600000L; // renew every 10 minutes, since token expires after 15m
 
-    static {
-        Security.addProvider(new PemKeyStoreProvider());
-    }
-
     private final AWS4Signer tokenGenerator;
 
     public RdsIamTomcatDataSource() {
@@ -49,6 +42,7 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
 
     public RdsIamTomcatDataSource(AWS4Signer tokenGenerator) {
         this.tokenGenerator = tokenGenerator;
+        RdsIamInitializer.init();
     }
 
     public RdsIamTomcatDataSource(AWS4Signer tokenGenerator, PoolConfiguration poolProperties) {
@@ -98,27 +92,23 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
          */
         @Override
         protected void init(PoolConfiguration prop) throws SQLException {
-            try {
-                final URI uri = new URI(prop.getUrl().substring(5)); // jdbc:
-                host = uri.getHost();
-                port = uri.getPort() > 0 ? uri.getPort() : DEFAULT_PORT;
-                updatePassword(prop);
+            final URI uri = URI.create(prop.getUrl().substring(5)); // jdbc:
+            host = uri.getHost();
+            port = uri.getPort() > 0 ? uri.getPort() : DEFAULT_PORT;
+            updatePassword(prop);
 
-                final Properties props = prop.getDbProperties();
-                props.setProperty(USE_SSL, "true");      // for MySQL 5.x and before
-                props.setProperty(REQUIRE_SSL, "true");  // for MySQL 5.x and before
-                props.setProperty(VERIFY_SERVER_CERTIFICATE, "true");
-                props.setProperty(SSL_MODE, VERIFY_CA); // for MySQL 8.x and higher
-                props.setProperty(TRUST_CERTIFICATE_KEY_STORE_URL, CA_BUNDLE_URL);
-                props.setProperty(TRUST_CERTIFICATE_KEY_STORE_TYPE, PEM);
+            final Properties props = prop.getDbProperties();
+            props.setProperty(USE_SSL, "true");      // for MySQL 5.x and before
+            props.setProperty(REQUIRE_SSL, "true");  // for MySQL 5.x and before
+            props.setProperty(VERIFY_SERVER_CERTIFICATE, "true");
+            props.setProperty(SSL_MODE, VERIFY_CA); // for MySQL 8.x and higher
+            props.setProperty(TRUST_CERTIFICATE_KEY_STORE_URL, CA_BUNDLE_URL);
+            props.setProperty(TRUST_CERTIFICATE_KEY_STORE_TYPE, PEM);
 
-                super.init(prop);
-                this.busyConnections = getPrivateConnectionListField("busy");
-                this.idleConnections = getPrivateConnectionListField("idle");
-                createBackgroundThread();
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(e.getMessage());
-            }
+            super.init(prop);
+            this.busyConnections = getPrivateConnectionListField("busy");
+            this.idleConnections = getPrivateConnectionListField("idle");
+            createBackgroundThread();
         }
 
         protected void createBackgroundThread() {

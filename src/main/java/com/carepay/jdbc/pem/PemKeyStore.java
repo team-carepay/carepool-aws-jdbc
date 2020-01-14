@@ -11,17 +11,19 @@ import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
- * KeyStore which supports reading .PEM files. Only loads entries once to improve performance.
+ * KeyStore, which supports reading .PEM files. Only loads entries once to improve performance.
  */
 public class PemKeyStore extends KeyStoreSpi {
     private static final String UNSUPPORTED_OPERATION = "Unsupported operation";
-    protected static Map<String, Entry> entries = new HashMap<>();
+    protected final ConcurrentMap<String, Entry> entries = new ConcurrentHashMap<>();
 
     protected Optional<Entry> getEntry(final String alias) {
         return Optional.ofNullable(entries.get(alias));
@@ -80,7 +82,7 @@ public class PemKeyStore extends KeyStoreSpi {
     @Override
     public String engineGetCertificateAlias(final Certificate cert) {
         for (final Map.Entry<String, Entry> entry : entries.entrySet()) {
-            if (cert == entry.getValue().getCertificate()) {
+            if (entry.getValue() != null && Objects.equals(cert, entry.getValue().getCertificate())) {
                 return entry.getKey();
             }
         }
@@ -88,38 +90,36 @@ public class PemKeyStore extends KeyStoreSpi {
     }
 
     @Override
-    public void engineLoad(final InputStream stream, final char[] password)
-            throws CertificateException {
+    public void engineLoad(final InputStream stream, final char[] password) throws CertificateException {
         if (stream != null && entries.isEmpty()) {
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            cf.generateCertificates(stream).forEach( c -> {
-                entries.put("pem" + ((X509Certificate)c).getSerialNumber(), new Entry(null, Collections.singletonList(c)));
-            });
+            for (final Certificate c : CertificateFactory.getInstance("X.509").generateCertificates(stream)) {
+                entries.put("pem" + ((X509Certificate) c).getSerialNumber(), new Entry(null, Collections.singletonList(c)));
+            }
         }
     }
 
     @Override
-    public void engineSetKeyEntry(String alias, Key key, char[] password, Certificate[] chain) {
+    public void engineSetKeyEntry(final String alias, final Key key, final char[] password, final Certificate[] chain) {
         throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
     }
 
     @Override
-    public void engineSetKeyEntry(String alias, byte[] key, Certificate[] chain) {
+    public void engineSetKeyEntry(final String alias, final byte[] key, final Certificate[] chain) {
         throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
     }
 
     @Override
-    public void engineSetCertificateEntry(String alias, Certificate cert) {
+    public void engineSetCertificateEntry(final String alias, final Certificate cert) {
         throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
     }
 
     @Override
-    public void engineDeleteEntry(String alias) {
+    public void engineDeleteEntry(final String alias) {
         throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
     }
 
     @Override
-    public void engineStore(OutputStream stream, char[] password) {
+    public void engineStore(final OutputStream stream, final char[] password) {
         throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
     }
 
