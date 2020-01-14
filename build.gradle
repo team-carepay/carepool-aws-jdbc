@@ -63,7 +63,14 @@ publishing {
 }
 
 checkstyle {
-    config = project.resources.text.fromUri('https://bitbucket.org/carepaydev/carepay-config/raw/HEAD/checkstyle-1.0.xml')
+    config = project.resources.text.fromUri('https://carepaydev.bitbucket.io/checkstyle-1.0.xml')
+}
+
+tasks.sonarqube.dependsOn tasks.jacocoTestReport
+jacocoTestReport {
+    reports {
+        xml.enabled true
+    }
 }
 
 release {
