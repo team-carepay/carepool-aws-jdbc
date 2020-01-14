@@ -1,13 +1,11 @@
 package com.carepay.jdbc;
 
 import java.net.URI;
-import java.security.Security;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import javax.annotation.PostConstruct;
 
 import com.carepay.aws.AWS4Signer;
-import com.carepay.jdbc.pem.PemKeyStoreProvider;
 import com.zaxxer.hikari.HikariDataSource;
 
 import static com.carepay.jdbc.RdsIamConstants.CA_BUNDLE_URL;
@@ -26,10 +24,6 @@ import static java.time.ZoneOffset.UTC;
  */
 public class RdsIamHikariDataSource extends HikariDataSource {
 
-    static {
-        Security.addProvider(new PemKeyStoreProvider());
-    }
-
     private static final int DEFAULT_PORT = 3306;
 
     private final AWS4Signer signer;
@@ -41,12 +35,13 @@ public class RdsIamHikariDataSource extends HikariDataSource {
     private boolean managed;
 
     public RdsIamHikariDataSource() {
-        this(new AWS4Signer(),Clock.systemUTC());
+        this(new AWS4Signer(), Clock.systemUTC());
     }
 
     public RdsIamHikariDataSource(final AWS4Signer signer, final Clock clock) {
         this.signer = signer;
         this.clock = clock;
+        RdsIamInitializer.init();
     }
 
     /**
