@@ -4,7 +4,7 @@ import java.time.Clock;
 import java.time.Instant;
 
 import com.carepay.aws.AWS4Signer;
-import com.carepay.aws.AWSCredentials;
+import com.carepay.aws.Credentials;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,15 +18,15 @@ public class RdsIamHikariDataSourceTest {
 
     private RdsIamHikariDataSource rdsIamHikariDataSource;
     private Clock brokenClock;
-    private AWSCredentials credentials;
+    private Credentials credentials;
     private AWS4Signer tokenGenerator;
 
     @Before
     public void setUp() {
         brokenClock = mock(Clock.class);
         when(brokenClock.instant()).thenReturn(Instant.parse("2018-09-19T16:02:42.00Z"));
-        credentials = new AWSCredentials("IAMKEYINSTANCE", "asdfqwertypolly", "ZYX12345");
-        tokenGenerator = new AWS4Signer(brokenClock, () -> credentials);
+        credentials = new Credentials("IAMKEYINSTANCE", "asdfqwertypolly", "ZYX12345");
+        tokenGenerator = new AWS4Signer(() -> credentials, () -> "eu-west-1", brokenClock);
         rdsIamHikariDataSource = new RdsIamHikariDataSource(tokenGenerator, brokenClock);
         rdsIamHikariDataSource.setDriverClassName(H2Driver.class.getName());
         rdsIamHikariDataSource.setJdbcUrl("jdbc:mysql://mydb.random.eu-west-1.rds.amazonaws.com/database");

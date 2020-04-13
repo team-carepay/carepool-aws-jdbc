@@ -6,7 +6,7 @@ import java.time.Clock;
 import java.time.Instant;
 
 import com.carepay.aws.AWS4Signer;
-import com.carepay.aws.AWSCredentials;
+import com.carepay.aws.Credentials;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 import org.junit.After;
@@ -35,7 +35,7 @@ public class RdsIamTomcatDataSourceTest {
         RdsIamTomcatDataSource.DEFAULT_TIMEOUT = 10L;
         this.brokenClock = mock(Clock.class);
         when(brokenClock.instant()).thenReturn(Instant.parse("2018-09-19T16:02:42.00Z"));
-        tokenGenerator = new AWS4Signer(brokenClock, () -> new AWSCredentials("IAMKEYINSTANCE", "asdfqwertypolly", "ZYX12345"));
+        tokenGenerator = new AWS4Signer(() -> new Credentials("IAMKEYINSTANCE", "asdfqwertypolly", "ZYX12345"), () -> "eu-west-1", brokenClock);
         rdsIamTomcatDataSource = new RdsIamTomcatDataSource(tokenGenerator);
         init();
     }
