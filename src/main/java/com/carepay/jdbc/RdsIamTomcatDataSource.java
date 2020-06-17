@@ -7,7 +7,7 @@ import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Consumer;
 
-import com.carepay.aws.AWS4Signer;
+import com.carepay.aws.auth.AWS4Signer;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.apache.tomcat.jdbc.pool.PoolConfiguration;
 import org.apache.tomcat.jdbc.pool.PoolUtilities;

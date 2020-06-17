@@ -5,8 +5,8 @@ import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 
-import com.carepay.aws.AWS4Signer;
-import com.carepay.aws.Credentials;
+import com.carepay.aws.auth.AWS4Signer;
+import com.carepay.aws.auth.Credentials;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 import org.junit.After;

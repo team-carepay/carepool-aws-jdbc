@@ -5,7 +5,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import javax.annotation.PostConstruct;
 
-import com.carepay.aws.AWS4Signer;
+import com.carepay.aws.auth.AWS4Signer;
 import com.zaxxer.hikari.HikariDataSource;
 
 import static com.carepay.jdbc.RdsIamConstants.CA_BUNDLE_URL;
