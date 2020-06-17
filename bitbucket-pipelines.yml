@@ -6,13 +6,10 @@ clone:
 definitions:
   caches:
     gradle-wrapper: ~/.gradle/wrapper
-    sonar: ~/.sonar/cache
-  config:
-    - &caches
-      caches:
-        - gradle
-        - gradle-wrapper
-        - sonar
+  common-caches: &caches
+    caches:
+      - gradle
+      - gradle-wrapper
   steps:
     - &check
       <<: *caches
@@ -20,21 +17,31 @@ definitions:
       # language=sh
       script:
         - ./gradlew check sonar
+    - &build
+      <<: *caches
+      name: Build
+      # language=sh
+      script:
+        - ./gradlew build sonar
+      artifacts:
+        - build/**
     - &release
       <<: *caches
       name: Release
       # language=sh
       script:
-        - git remote set-url origin "https://x-token-auth:$(curl -s -X POST -u "$BOT_CREDENTIALS" https://bitbucket.org/site/oauth2/access_token -d grant_type=client_credentials -d scopes="repository" | jq -r .access_token)@bitbucket.org/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}"
-        - ./gradlew release -Prelease.releaseVersion=$RELEASE_VERSION -Prelease.newVersion=$NEW_VERSION
+        - git remote set-url origin $BITBUCKET_GIT_SSH_ORIGIN
+        - ./gradlew sonar release -Prelease.releaseVersion=$RELEASE_VERSION -Prelease.newVersion=$NEW_VERSION
 
 pipelines:
-  pull-requests:
-    '**':
-      - step: *check
+  default:
+    - step: *check
   branches:
     master:
       - step: *release
+  pull-requests:
+    '**':
+      - step: *check
   custom:
     release:
       - variables:
