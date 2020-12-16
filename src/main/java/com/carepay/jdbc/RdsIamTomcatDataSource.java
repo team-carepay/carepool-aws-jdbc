@@ -7,13 +7,10 @@ import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Consumer;
 
-import com.carepay.aws.auth.AWS4Signer;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.apache.tomcat.jdbc.pool.PoolConfiguration;
 import org.apache.tomcat.jdbc.pool.PoolUtilities;
 import org.apache.tomcat.jdbc.pool.PooledConnection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.carepay.jdbc.RdsIamConstants.CA_BUNDLE_URL;
 import static com.carepay.jdbc.RdsIamConstants.PEM;
@@ -31,21 +28,20 @@ import static com.carepay.jdbc.RdsIamConstants.VERIFY_SERVER_CERTIFICATE;
 public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSource {
 
     public static final int DEFAULT_PORT = 3306;
-    private static final Logger LOG = LoggerFactory.getLogger(RdsIamTomcatDataSource.class);
     static long DEFAULT_TIMEOUT = 600000L; // renew every 10 minutes, since token expires after 15m
 
-    private final AWS4Signer tokenGenerator;
+    private final RdsAWS4Signer tokenGenerator;
 
     public RdsIamTomcatDataSource() {
-        this(new AWS4Signer());
+        this(new RdsAWS4Signer());
     }
 
-    public RdsIamTomcatDataSource(AWS4Signer tokenGenerator) {
+    public RdsIamTomcatDataSource(RdsAWS4Signer tokenGenerator) {
         this.tokenGenerator = tokenGenerator;
         RdsIamInitializer.init();
     }
 
-    public RdsIamTomcatDataSource(AWS4Signer tokenGenerator, PoolConfiguration poolProperties) {
+    public RdsIamTomcatDataSource(RdsAWS4Signer tokenGenerator, PoolConfiguration poolProperties) {
         super(poolProperties);
         this.tokenGenerator = tokenGenerator;
         RdsIamInitializer.init();
@@ -144,7 +140,6 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
                     busyConnections.forEach(consumer);
                 } while (this.tokenThread != null);
             } catch (InterruptedException e) {
-                LOG.trace("Interrupted", e);
                 Thread.currentThread().interrupt();
             }
         }
@@ -163,7 +158,7 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
          * Updates the password in the pool by generating a new token
          */
         private void updatePassword(PoolConfiguration poolConfiguration) {
-            String token = tokenGenerator.createDbAuthToken(host, port, poolConfiguration.getUsername());
+            String token = tokenGenerator.generateToken(host, port, poolConfiguration.getUsername());
             poolConfiguration.setPassword(token);
         }
     }

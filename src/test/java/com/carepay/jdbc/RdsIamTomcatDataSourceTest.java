@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 
-import com.carepay.aws.auth.AWS4Signer;
 import com.carepay.aws.auth.Credentials;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
@@ -22,7 +21,7 @@ public class RdsIamTomcatDataSourceTest {
 
     private RdsIamTomcatDataSource rdsIamTomcatDataSource;
     private Clock brokenClock;
-    private AWS4Signer tokenGenerator;
+    private RdsAWS4Signer tokenGenerator;
 
     private void init() {
         rdsIamTomcatDataSource.setDriverClassName(H2Driver.class.getName());
@@ -35,7 +34,7 @@ public class RdsIamTomcatDataSourceTest {
         RdsIamTomcatDataSource.DEFAULT_TIMEOUT = 10L;
         this.brokenClock = mock(Clock.class);
         when(brokenClock.instant()).thenReturn(Instant.parse("2018-09-19T16:02:42.00Z"));
-        tokenGenerator = new AWS4Signer(() -> new Credentials("IAMKEYINSTANCE", "asdfqwertypolly", "ZYX12345"), () -> "eu-west-1", brokenClock);
+        tokenGenerator = new RdsAWS4Signer(() -> new Credentials("IAMKEYINSTANCE", "asdfqwertypolly", "ZYX12345"), () -> "eu-west-1", brokenClock);
         rdsIamTomcatDataSource = new RdsIamTomcatDataSource(tokenGenerator);
         init();
     }

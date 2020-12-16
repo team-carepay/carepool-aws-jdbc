@@ -5,7 +5,6 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import javax.annotation.PostConstruct;
 
-import com.carepay.aws.auth.AWS4Signer;
 import com.zaxxer.hikari.HikariDataSource;
 
 import static com.carepay.jdbc.RdsIamConstants.CA_BUNDLE_URL;
@@ -26,7 +25,7 @@ public class RdsIamHikariDataSource extends HikariDataSource {
 
     private static final int DEFAULT_PORT = 3306;
 
-    private final AWS4Signer signer;
+    private final RdsAWS4Signer signer;
     private final Clock clock;
     private String host;
     private int port;
@@ -35,10 +34,10 @@ public class RdsIamHikariDataSource extends HikariDataSource {
     private boolean managed;
 
     public RdsIamHikariDataSource() {
-        this(new AWS4Signer(), Clock.systemUTC());
+        this(new RdsAWS4Signer(), Clock.systemUTC());
     }
 
-    public RdsIamHikariDataSource(final AWS4Signer signer, final Clock clock) {
+    public RdsIamHikariDataSource(final RdsAWS4Signer signer, final Clock clock) {
         this.signer = signer;
         this.clock = clock;
         RdsIamInitializer.init();
@@ -75,7 +74,7 @@ public class RdsIamHikariDataSource extends HikariDataSource {
         }
         final LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), UTC);
         if (this.expiryDate == null || expiryDate.isBefore(now)) {
-            this.authToken = signer.createDbAuthToken(host, port, getUsername());
+            this.authToken = signer.generateToken(host, port, getUsername());
             this.expiryDate = now.plusMinutes(10L); // Token expires after 15 min, so renew after 10 min
         }
         return this.authToken;
