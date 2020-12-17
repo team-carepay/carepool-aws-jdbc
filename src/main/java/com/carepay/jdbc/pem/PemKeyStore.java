@@ -54,7 +54,7 @@ public class PemKeyStore extends KeyStoreSpi {
         return getEntry(alias)
                 .map(Entry::getCertificate)
                 .filter(cert -> cert instanceof X509Certificate)
-                .map(cert -> (X509Certificate) cert)
+                .map(X509Certificate.class::cast)
                 .map(X509Certificate::getNotBefore)
                 .orElse(null);
     }

@@ -28,7 +28,7 @@ import static com.carepay.jdbc.RdsIamConstants.VERIFY_SERVER_CERTIFICATE;
 public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSource {
 
     public static final int DEFAULT_PORT = 3306;
-    static long DEFAULT_TIMEOUT = 600000L; // renew every 10 minutes, since token expires after 15m
+    static long defaultTimeout = 600000L; // renew every 10 minutes, since token expires after 15m
 
     private final RdsAWS4Signer tokenGenerator;
 
@@ -118,7 +118,7 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
         private BlockingQueue<PooledConnection> getPrivateConnectionListField(final String fieldName) {
             try {
                 Field queueField = ConnectionPool.class.getDeclaredField(fieldName);
-                queueField.setAccessible(true);
+                queueField.setAccessible(true); //NOSONAR
                 return (BlockingQueue<PooledConnection>) queueField.get(this);
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 throw new IllegalStateException(e.getMessage(), e);
@@ -130,11 +130,11 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
             /**
              * Removes the cached password from the PooledConnection
              */
-            Consumer<PooledConnection> consumer = (pc) -> pc.getAttributes().remove(PoolUtilities.PROP_PASSWORD);
+            Consumer<PooledConnection> consumer = pc -> pc.getAttributes().remove(PoolUtilities.PROP_PASSWORD);
             try {
                 do {
                     // wait for 10 minutes, then recreate the token
-                    Thread.sleep(DEFAULT_TIMEOUT);
+                    Thread.sleep(defaultTimeout);
                     updatePassword(poolProperties);
                     idleConnections.forEach(consumer);
                     busyConnections.forEach(consumer);

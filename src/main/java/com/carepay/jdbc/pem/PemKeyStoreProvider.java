@@ -16,7 +16,7 @@ public class PemKeyStoreProvider extends Provider {
     }
 
     private void setup() {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> { //NOSONAR
             performSetup();
             return null;
         });

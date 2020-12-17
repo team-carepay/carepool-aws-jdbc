@@ -18,8 +18,9 @@ public class RdsIamInitializerTest {
         Security.removeProvider("PEM");
         RdsIamInitializer.init();
         assertThat(new URL(RdsIamConstants.CA_BUNDLE_URL).openStream()).isNotNull();
+        final URL url = new URL("classpath:blabla");
         try {
-            new URL("classpath:blabla").openConnection();
+            url.openConnection();
             fail();
         } catch (IOException e) {
             assertThat(e.getMessage()).isEqualTo("Resource not found: classpath:blabla");

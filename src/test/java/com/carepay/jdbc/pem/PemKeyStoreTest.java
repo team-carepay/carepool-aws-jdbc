@@ -36,7 +36,7 @@ public class PemKeyStoreTest {
     @Test
     public void testEngineGetCertificateChain() {
         Certificate[] certs = pemKeyStore.engineGetCertificateChain("pem66");
-        assertThat(certs.length).isEqualTo(1);
+        assertThat(certs).hasSize(1);
     }
 
     @Test

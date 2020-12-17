@@ -30,7 +30,7 @@ public interface RdsIamInitializer {
         try {
             new URL(caBundleUrl);
         } catch (MalformedURLException e) {
-            URL.setURLStreamHandlerFactory((p) -> protocol.equals(p) ? new URLStreamHandler() {
+            URL.setURLStreamHandlerFactory(p -> protocol.equals(p) ? new URLStreamHandler() {
                 @Override
                 protected URLConnection openConnection(URL url) throws IOException {
                     final URL classpathUrl = getClass().getResource(url.getPath());

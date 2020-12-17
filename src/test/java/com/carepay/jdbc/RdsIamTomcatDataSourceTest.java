@@ -31,7 +31,7 @@ public class RdsIamTomcatDataSourceTest {
 
     @Before
     public void setUp() {
-        RdsIamTomcatDataSource.DEFAULT_TIMEOUT = 10L;
+        RdsIamTomcatDataSource.defaultTimeout = 10L;
         this.brokenClock = mock(Clock.class);
         when(brokenClock.instant()).thenReturn(Instant.parse("2018-09-19T16:02:42.00Z"));
         tokenGenerator = new RdsAWS4Signer(() -> new Credentials("IAMKEYINSTANCE", "asdfqwertypolly", "ZYX12345"), () -> "eu-west-1", brokenClock);
