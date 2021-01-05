@@ -1,10 +1,11 @@
 package com.carepay.jdbc;
 
-import java.net.URI;
+import java.net.URL;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import javax.annotation.PostConstruct;
 
+import com.carepay.jdbc.util.JdbcUrlUtils;
 import com.zaxxer.hikari.HikariDataSource;
 
 import static com.carepay.jdbc.RdsIamConstants.CA_BUNDLE_URL;
@@ -23,12 +24,10 @@ import static java.time.ZoneOffset.UTC;
  */
 public class RdsIamHikariDataSource extends HikariDataSource {
 
-    private static final int DEFAULT_PORT = 3306;
-
     private final RdsAWS4Signer signer;
     private final Clock clock;
-    private String host;
-    private int port;
+    protected String host;
+    protected int port;
     private LocalDateTime expiryDate;
     private String authToken;
     private boolean managed;
@@ -55,6 +54,13 @@ public class RdsIamHikariDataSource extends HikariDataSource {
         addDataSourceProperty(SSL_MODE, VERIFY_CA);       // for MySQL 8.x and higher
         addDataSourceProperty(TRUST_CERTIFICATE_KEY_STORE_URL, CA_BUNDLE_URL);
         addDataSourceProperty(TRUST_CERTIFICATE_KEY_STORE_TYPE, PEM);
+        extractHostFromUrl();
+    }
+
+    protected void extractHostFromUrl() {
+        URL uri = JdbcUrlUtils.extractJdbcURL(getJdbcUrl());
+        this.host = uri.getHost();
+        this.port = uri.getPort();
     }
 
     /**
@@ -67,17 +73,16 @@ public class RdsIamHikariDataSource extends HikariDataSource {
         if (!managed) {
             return super.getPassword();
         }
-        if (host == null) {
-            final URI uri = URI.create(this.getJdbcUrl().substring(5)); // jdbc:
-            host = uri.getHost();
-            port = uri.getPort() > 0 ? uri.getPort() : DEFAULT_PORT;
-        }
+        refreshToken();
+        return this.authToken;
+    }
+
+    private void refreshToken() {
         final LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), UTC);
         if (this.expiryDate == null || expiryDate.isBefore(now)) {
             this.authToken = signer.generateToken(host, port, getUsername());
             this.expiryDate = now.plusMinutes(10L); // Token expires after 15 min, so renew after 10 min
         }
-        return this.authToken;
     }
 }
 

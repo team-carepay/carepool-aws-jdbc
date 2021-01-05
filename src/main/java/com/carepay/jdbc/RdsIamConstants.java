@@ -1,7 +1,6 @@
 package com.carepay.jdbc;
 
-public enum RdsIamConstants {
-    ;
+public final class RdsIamConstants {
     public static final String CLASSPATH_PROTOCOL = "classpath";
     public static final String CA_BUNDLE_PATH = "/rds-combined-ca-bundle.pem"; //NOSONAR
     public static final String CA_BUNDLE_URL = CLASSPATH_PROTOCOL + ":" + CA_BUNDLE_PATH;
@@ -13,4 +12,8 @@ public enum RdsIamConstants {
     public static final String TRUST_CERTIFICATE_KEY_STORE_URL = "trustCertificateKeyStoreUrl";
     public static final String TRUST_CERTIFICATE_KEY_STORE_TYPE = "trustCertificateKeyStoreType";
     public static final String PEM = "PEM";
+
+    protected RdsIamConstants() {
+        // not implemented
+    }
 }

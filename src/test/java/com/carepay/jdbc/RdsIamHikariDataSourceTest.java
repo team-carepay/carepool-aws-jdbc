@@ -74,4 +74,33 @@ public class RdsIamHikariDataSourceTest {
         rdsIamHikariDataSource.managedStart();
         assertThat(rdsIamHikariDataSource.getPassword()).isEqualTo("mydb.random.eu-west-1.rds.amazonaws.com:3306/?Action=connect&DBUser=iamuser&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=IAMKEYINSTANCE%2F20180919%2Feu-west-1%2Frds-db%2Faws4_request&X-Amz-Date=20180919T160242Z&X-Amz-Expires=900&X-Amz-Security-Token=ZYX12345&X-Amz-SignedHeaders=host&X-Amz-Signature=e97dadda634d1efb530e381b8c5bccb10cf6ef824973cb28f44212cb2d6d24da");
     }
+
+    @Test
+    public void testExtractHostFromUrl() {
+        rdsIamHikariDataSource.setJdbcUrl("jdbc:mysql://mydb.random.eu-west-1.rds.amazonaws.com/schema");
+        rdsIamHikariDataSource.extractHostFromUrl();
+        assertThat(rdsIamHikariDataSource.host).isEqualTo("mydb.random.eu-west-1.rds.amazonaws.com");
+        assertThat(rdsIamHikariDataSource.port).isEqualTo(3306);
+        rdsIamHikariDataSource.setJdbcUrl("jdbc:mysql://mydb.random.eu-west-1.rds.amazonaws.com:13306/schema");
+        rdsIamHikariDataSource.extractHostFromUrl();
+        assertThat(rdsIamHikariDataSource.host).isEqualTo("mydb.random.eu-west-1.rds.amazonaws.com");
+        assertThat(rdsIamHikariDataSource.port).isEqualTo(13306);
+    }
+
+    @Test
+    public void testExtractHostFromAuroraUrl() {
+        rdsIamHikariDataSource.setJdbcUrl("jdbc:mysql:aurora//mydb.random.eu-west-1.rds.amazonaws.com/schema");
+        rdsIamHikariDataSource.extractHostFromUrl();
+        assertThat(rdsIamHikariDataSource.host).isEqualTo("mydb.random.eu-west-1.rds.amazonaws.com");
+        assertThat(rdsIamHikariDataSource.port).isEqualTo(3306);
+    }
+
+
+    @Test
+    public void testExtractHostFromOracleUrl() {
+        rdsIamHikariDataSource.setJdbcUrl("jdbc:oracle:thin@dbhostname.domain-name.com:1521");
+        rdsIamHikariDataSource.extractHostFromUrl();
+        assertThat(rdsIamHikariDataSource.host).isEqualTo("dbhostname.domain-name.com");
+        assertThat(rdsIamHikariDataSource.port).isEqualTo(1521);
+    }
 }

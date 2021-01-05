@@ -11,7 +11,7 @@ public class PemKeyStoreProvider extends Provider {
     private static final long serialVersionUID = 1L;
 
     public PemKeyStoreProvider() {
-        super("PEM", 1, "Provides PEM based KeyStore impl");
+        super("PEM", 1, "Provides PEM based KeyStore impl"); // NOSONAR
         setup();
     }
 
