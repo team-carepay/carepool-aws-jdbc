@@ -9,7 +9,7 @@ spring:
   datasource:
     url: jdbc:mysql://dbhost.domain.com/dbname
     username: iam_username
-    type: com.carepay.jdbc.RdsIamTomcatDataSource
+    type: com.carepay.jdbc.tomcat.RdsIamTomcatDataSource
 
 ```
 
@@ -19,7 +19,7 @@ spring:
   datasource:
     url: jdbc:mysql://dbhost.domain.com/dbname
     username: iam_username
-    type: com.carepay.jdbc.RdsIamHikariDataSource
+    type: com.carepay.jdbc.hikari.RdsIamHikariDataSource
 
 ```
 

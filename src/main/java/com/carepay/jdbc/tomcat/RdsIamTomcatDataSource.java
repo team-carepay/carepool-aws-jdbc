@@ -1,9 +1,11 @@
-package com.carepay.jdbc;
+package com.carepay.jdbc.tomcat;
 
 import java.sql.SQLException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import com.carepay.jdbc.RdsAWS4Signer;
+import com.carepay.jdbc.pem.PemKeyStoreProvider;
 import com.carepay.jdbc.util.DaemonThreadFactory;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.apache.tomcat.jdbc.pool.PoolConfiguration;
@@ -12,6 +14,10 @@ import org.apache.tomcat.jdbc.pool.PoolConfiguration;
  * DataSource based on Tomcat connection pool that supports IAM authentication to RDS
  */
 public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSource {
+
+    static {
+        PemKeyStoreProvider.register();
+    }
 
     private final ScheduledExecutorService scheduledExectorService;
     private final RdsAWS4Signer tokenGenerator;
@@ -23,14 +29,14 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
     public RdsIamTomcatDataSource(final RdsAWS4Signer tokenGenerator, final ScheduledExecutorService scheduledExecutorService) {
         this.tokenGenerator = tokenGenerator;
         this.scheduledExectorService = scheduledExecutorService;
-        RdsIamInitializer.init();
+        PemKeyStoreProvider.register();
     }
 
-    public RdsIamTomcatDataSource(RdsAWS4Signer tokenGenerator, final ScheduledExecutorService scheduledExecutorService, PoolConfiguration poolProperties) {
+    public RdsIamTomcatDataSource(final RdsAWS4Signer tokenGenerator, final ScheduledExecutorService scheduledExecutorService, final PoolConfiguration poolProperties) {
         super(poolProperties);
         this.tokenGenerator = tokenGenerator;
         this.scheduledExectorService = scheduledExecutorService;
-        RdsIamInitializer.init();
+        PemKeyStoreProvider.register();
     }
 
     /**

@@ -1,4 +1,4 @@
-package com.carepay.jdbc;
+package com.carepay.jdbc.tomcat;
 
 import java.lang.reflect.Field;
 import java.net.URL;
@@ -10,6 +10,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import com.carepay.jdbc.RdsAWS4Signer;
 import com.carepay.jdbc.util.JdbcUrlUtils;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.apache.tomcat.jdbc.pool.PoolConfiguration;

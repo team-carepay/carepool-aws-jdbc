@@ -3,6 +3,7 @@ package com.carepay.jdbc;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import com.carepay.jdbc.util.DBHttpURLConnection;
 import org.junit.Before;
 import org.junit.Test;
 

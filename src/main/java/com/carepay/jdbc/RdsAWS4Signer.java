@@ -5,6 +5,7 @@ import java.time.Clock;
 import com.carepay.aws.auth.AWS4Signer;
 import com.carepay.aws.auth.CredentialsProvider;
 import com.carepay.aws.auth.RegionProvider;
+import com.carepay.jdbc.util.DBHttpURLConnection;
 
 import static com.carepay.jdbc.util.JdbcUrlUtils.createURL;
 

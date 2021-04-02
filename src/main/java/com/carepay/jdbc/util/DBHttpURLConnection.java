@@ -1,4 +1,4 @@
-package com.carepay.jdbc;
+package com.carepay.jdbc.util;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -6,7 +6,7 @@ import java.net.URL;
 /**
  * Wrapper class for HttpURLConnection, used for RDS-DB signing requests.
  */
-class DBHttpURLConnection extends HttpURLConnection {
+public class DBHttpURLConnection extends HttpURLConnection {
 
     public DBHttpURLConnection(final URL u) {
         super(u);

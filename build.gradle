@@ -1,10 +1,14 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
+    id 'signing'
     id 'jacoco'
     id 'checkstyle'
-    id 'net.researchgate.release' version '2.8.1'
+
     id 'org.sonarqube' version '2.8'
+    id 'net.researchgate.release' version '2.8.1'
+    id 'io.github.gradle-nexus.publish-plugin' version '1.0.0'
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
 }
 
 group = 'com.carepay'
@@ -15,28 +19,28 @@ configurations {
 
 repositories {
     mavenCentral()
-    maven {
-        url 's3://cp-maven-repo/releases'
-        authentication {
-            awsIm(AwsImAuthentication)
-        }
-    }
 }
 
 dependencies {
-    implementation 'com.carepay:carepool-aws:2.0.11'
-    implementation 'javax.annotation:javax.annotation-api:1.3.2'
-    compileOnly 'com.zaxxer:HikariCP:3.2.0'
-    compileOnly 'org.apache.tomcat:tomcat-jdbc:9.0.21'
-
-    testImplementation 'com.h2database:h2:1.4.199'
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'org.assertj:assertj-core:3.13.2'
-    testImplementation 'org.mockito:mockito-core:2.28.2'
+    implementation(
+        'com.carepay:carepool-aws:2.1.0',
+    )
+    compileOnly(
+        'com.zaxxer:HikariCP:3.2.0',
+        'org.apache.tomcat:tomcat-jdbc:9.0.21',
+        'org.mariadb.jdbc:mariadb-java-client:2.7.1',
+    )
+    testImplementation(
+        'com.h2database:h2:1.4.199',
+        'junit:junit:4.12',
+        'org.assertj:assertj-core:3.13.2',
+        'org.mockito:mockito-core:2.28.2',
+    )
 }
 
 java {
     withSourcesJar()
+    withJavadocJar()
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }
@@ -45,29 +49,59 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs << '-parameters'
 }
 
+//test {
+//    useJUnitPlatform()
+//}
+
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
-        }
-    }
-    repositories {
-        maven {
-            url 's3://cp-maven-repo/releases'
-            authentication {
-                awsIm(AwsImAuthentication)
+            pom {
+                name = 'Carepool AWS'
+                description = 'Light-weight implementation of AWS4 signer for Java'
+                url = 'https://github.com/team-carepay/carepool-aws'
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'blagerweij'
+                        name = 'Barry Lagerweij'
+                        email = 'b.lagerweij@carepay.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/team-carepay/carepool-aws.git'
+                    developerConnection = 'scm:git:git@github.com:team-carepay/carepool-aws.git'
+                    url = 'https://github.com/team-carepay/carepool-aws'
+                }
             }
         }
     }
 }
 
+signing {
+    required = { gradle.taskGraph.hasTask("publish") }
+    sign publishing.publications.mavenJava
+}
+
 checkstyle {
-    config = project.resources.text.fromUri('https://carepaydev.bitbucket.io/checkstyle-1.1.xml')
+    toolVersion = '8.41'
+    config = project.resources.text.fromUri('https://raw.githubusercontent.com/checkstyle/checkstyle/checkstyle-8.41/src/main/resources/google_checks.xml')
 }
 
 tasks.sonarqube.dependsOn tasks.jacocoTestReport
 jacocoTestReport {
     reports.xml.enabled true
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
 }
 
 release {
@@ -78,4 +112,11 @@ release {
     }
 }
 
-afterReleaseBuild.dependsOn publish
+nexusPublishing {
+    repositories {
+        sonatype {
+            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+            stagingProfileId = '10134d502bbe18'
+        }
+    }
+}

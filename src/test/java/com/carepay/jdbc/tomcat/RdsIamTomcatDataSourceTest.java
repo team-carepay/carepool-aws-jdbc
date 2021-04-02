@@ -1,4 +1,4 @@
-package com.carepay.jdbc;
+package com.carepay.jdbc.tomcat;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -9,6 +9,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import com.carepay.aws.auth.Credentials;
+import com.carepay.jdbc.H2Driver;
+import com.carepay.jdbc.RdsAWS4Signer;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 import org.junit.After;

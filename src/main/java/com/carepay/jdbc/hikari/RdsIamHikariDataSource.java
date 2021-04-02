@@ -1,10 +1,11 @@
-package com.carepay.jdbc;
+package com.carepay.jdbc.hikari;
 
 import java.net.URL;
 import java.time.Clock;
 import java.time.LocalDateTime;
-import javax.annotation.PostConstruct;
 
+import com.carepay.jdbc.RdsAWS4Signer;
+import com.carepay.jdbc.pem.PemKeyStoreProvider;
 import com.carepay.jdbc.util.JdbcUrlUtils;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -24,13 +25,16 @@ import static java.time.ZoneOffset.UTC;
  */
 public class RdsIamHikariDataSource extends HikariDataSource {
 
+    static {
+        PemKeyStoreProvider.register();
+    }
+
     private final RdsAWS4Signer signer;
     private final Clock clock;
     protected String host;
     protected int port;
     private LocalDateTime expiryDate;
     private String authToken;
-    private boolean managed;
 
     public RdsIamHikariDataSource() {
         this(new RdsAWS4Signer(), Clock.systemUTC());
@@ -39,26 +43,16 @@ public class RdsIamHikariDataSource extends HikariDataSource {
     public RdsIamHikariDataSource(final RdsAWS4Signer signer, final Clock clock) {
         this.signer = signer;
         this.clock = clock;
-        RdsIamInitializer.init();
-    }
-
-    /**
-     * RDS IAM authentication sends the token as a plaintext password. SSL must be enabled.
-     */
-    @PostConstruct
-    public void managedStart() {
-        managed = true;
         addDataSourceProperty(USE_SSL, "true");     // for MySQL 5.x and before
         addDataSourceProperty(REQUIRE_SSL, "true"); // for MySQL 5.x and before
         addDataSourceProperty(VERIFY_SERVER_CERTIFICATE, "true");
         addDataSourceProperty(SSL_MODE, VERIFY_CA);       // for MySQL 8.x and higher
         addDataSourceProperty(TRUST_CERTIFICATE_KEY_STORE_URL, CA_BUNDLE_URL);
         addDataSourceProperty(TRUST_CERTIFICATE_KEY_STORE_TYPE, PEM);
-        extractHostFromUrl();
     }
 
     protected void extractHostFromUrl() {
-        URL uri = JdbcUrlUtils.extractJdbcURL(getJdbcUrl());
+        final URL uri = JdbcUrlUtils.extractJdbcURL(getJdbcUrl());
         this.host = uri.getHost();
         this.port = uri.getPort();
     }
@@ -70,9 +64,6 @@ public class RdsIamHikariDataSource extends HikariDataSource {
      */
     @Override
     public String getPassword() {
-        if (!managed) {
-            return super.getPassword();
-        }
         refreshToken();
         return this.authToken;
     }
@@ -80,6 +71,9 @@ public class RdsIamHikariDataSource extends HikariDataSource {
     private void refreshToken() {
         final LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), UTC);
         if (this.expiryDate == null || expiryDate.isBefore(now)) {
+            if (host == null) {
+                extractHostFromUrl();
+            }
             this.authToken = signer.generateToken(host, port, getUsername());
             this.expiryDate = now.plusMinutes(10L); // Token expires after 15 min, so renew after 10 min
         }
