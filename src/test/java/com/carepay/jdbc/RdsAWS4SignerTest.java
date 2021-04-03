@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 
 import com.carepay.aws.auth.Credentials;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

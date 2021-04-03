@@ -13,9 +13,9 @@ import com.carepay.jdbc.H2Driver;
 import com.carepay.jdbc.RdsAWS4Signer;
 import org.apache.tomcat.jdbc.pool.ConnectionPool;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.stubbing.Answer;
 
@@ -42,7 +42,7 @@ public class RdsIamTomcatDataSourceTest {
         rdsIamTomcatDataSource.setUsername("iamuser");
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         poolProperties = new PoolProperties();
         this.brokenClock = mock(Clock.class);
@@ -56,7 +56,7 @@ public class RdsIamTomcatDataSourceTest {
         init();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         rdsIamTomcatDataSource.close();
     }

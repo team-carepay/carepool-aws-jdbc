@@ -31,10 +31,13 @@ dependencies {
         'org.mariadb.jdbc:mariadb-java-client:2.7.1',
     )
     testImplementation(
-        'com.h2database:h2:1.4.199',
-        'junit:junit:4.12',
-        'org.assertj:assertj-core:3.13.2',
-        'org.mockito:mockito-core:2.28.2',
+            'com.h2database:h2:1.4.199',
+            'org.junit.jupiter:junit-jupiter-api:5.7.0',
+            'org.assertj:assertj-core:3.18.1',
+            'org.mockito:mockito-core:3.7.0',
+    )
+    testRuntimeOnly(
+            'org.junit.jupiter:junit-jupiter-engine:5.7.0',
     )
 }
 
@@ -59,9 +62,9 @@ publishing {
         mavenJava(MavenPublication) {
             from components.java
             pom {
-                name = 'Carepool AWS'
-                description = 'Light-weight implementation of AWS4 signer for Java'
-                url = 'https://github.com/team-carepay/carepool-aws'
+                name = 'Carepool AWS JDBC'
+                description = 'RDS IAM support for Tomcat, Hikari and MariaDB'
+                url = 'https://github.com/team-carepay/carepool-aws-jdbc'
                 licenses {
                     license {
                         name = 'The Apache License, Version 2.0'
@@ -76,9 +79,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = 'scm:git:git://github.com/team-carepay/carepool-aws.git'
-                    developerConnection = 'scm:git:git@github.com:team-carepay/carepool-aws.git'
-                    url = 'https://github.com/team-carepay/carepool-aws'
+                    connection = 'scm:git:git://github.com/team-carepay/carepool-aws-jdbc.git'
+                    developerConnection = 'scm:git:git@github.com:team-carepay/carepool-aws-jdbc.git'
+                    url = 'https://github.com/team-carepay/carepool-aws-jdbc'
                 }
             }
         }

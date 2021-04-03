@@ -3,10 +3,10 @@ package com.carepay.jdbc.util;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 
 public class JdbcUrlUtilsTest {
@@ -32,12 +32,8 @@ public class JdbcUrlUtilsTest {
 
     @Test
     public void extractInvalidJdbcURL() {
-        try {
-            JdbcUrlUtils.extractJdbcURL("INVALID!my-db.host.com:3306/db");
-            fail();
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
+        assertThatThrownBy(() -> JdbcUrlUtils.extractJdbcURL("INVALID!my-db.host.com:3306/db"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

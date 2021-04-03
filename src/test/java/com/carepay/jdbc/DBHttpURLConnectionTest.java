@@ -4,8 +4,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import com.carepay.jdbc.util.DBHttpURLConnection;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -13,7 +13,7 @@ public class DBHttpURLConnectionTest {
 
     private TestDBHttpURLConnection urlConnection;
 
-    @Before
+    @BeforeEach
     public void setUp() throws MalformedURLException {
         this.urlConnection = new TestDBHttpURLConnection(new URL("http://nonexistinghost.nonexistingdomain31415926535.tld/test"));
     }
