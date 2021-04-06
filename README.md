@@ -29,3 +29,8 @@ implementation 'com.carepay:carepool-jdbc:1.0.0'
 implementation 'com.zaxxer:HikariCP:3.2.0'`
 //implementation 'org.apache.tomcat:tomcat-jdbc:9.0.21'
 ```
+
+## MariaDB Plugin
+To use the MariaDB Plugin, simply add `carepool-aws-jdbc-2.1.1-all.jar` to the classpath of the JDBC driver. To use the IAM plugin, you need to specify the credentials type: `credentialType=AWS4RDS`. Example JDBC URL:
+
+`jdbc:mariadb://mysql-host-db.cluster-xxxxxxxxxx.eu-west-1.rds.amazonaws.com/dbname?credentialType=AWS4RDS`

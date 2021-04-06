@@ -43,7 +43,10 @@ import static java.time.ZoneOffset.UTC;
  */
 public class AmazonRdsIamCredentialPlugin implements CredentialPlugin {
 
-    private Clock clock = Clock.systemUTC();
+    private final Clock clock;
+    private final CredentialsProvider credentialsProvider;
+    private final RegionProvider regionProvider;
+
     private RdsAWS4Signer signer;
     private LocalDateTime expiryDate;
     private HostAddress hostAddress;
@@ -65,21 +68,33 @@ public class AmazonRdsIamCredentialPlugin implements CredentialPlugin {
         return true;
     }
 
+    public AmazonRdsIamCredentialPlugin() {
+        this(Clock.systemUTC(), new DefaultCredentialsProviderChain(), new DefaultRegionProviderChain());
+    }
+
+    public AmazonRdsIamCredentialPlugin(Clock clock, CredentialsProvider credentialsProvider, RegionProvider regionProvider) {
+        this.clock = clock;
+        this.credentialsProvider = credentialsProvider;
+        this.regionProvider = regionProvider;
+    }
+
     @Override
     public CredentialPlugin initialize(final Options options, final String username, final HostAddress hostAddress) {
         this.hostAddress = hostAddress;
         this.username = username;
-
         final Properties nonMappedOptions = options.nonMappedOptions;
-        final String accessKeyId = nonMappedOptions.getProperty("accessKeyId");
-        final String secretKey = nonMappedOptions.getProperty("secretKey");
-        final String region = nonMappedOptions.getProperty("region");
-
-        final CredentialsProvider awsCredentialsProvider = accessKeyId != null && secretKey != null ? () -> new Credentials(accessKeyId, secretKey, null) : new DefaultCredentialsProviderChain();
-        final RegionProvider regionProvider = region != null ? () -> region : new DefaultRegionProviderChain();
-
-        this.signer = new RdsAWS4Signer(awsCredentialsProvider, regionProvider, Clock.systemUTC());
+        this.signer = new RdsAWS4Signer(getCredentialsProvider(nonMappedOptions), getRegionProvider(nonMappedOptions), this.clock);
         return this;
+    }
+
+    private RegionProvider getRegionProvider(final Properties properties) {
+        final String region = properties.getProperty("region");
+        return region != null ? () -> region : this.regionProvider;
+    }
+
+    private CredentialsProvider getCredentialsProvider(final Properties properties) {
+        final Credentials propertyCredentials = new Credentials(properties.getProperty("accessKeyId"), properties.getProperty("secretKey"), null);
+        return propertyCredentials.isPresent() ? () -> propertyCredentials : this.credentialsProvider;
     }
 
     @Override

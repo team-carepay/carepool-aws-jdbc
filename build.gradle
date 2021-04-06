@@ -23,7 +23,7 @@ repositories {
 
 dependencies {
     implementation(
-        'com.carepay:carepool-aws:2.1.0',
+        'com.carepay:carepool-aws:2.1.2',
     )
     compileOnly(
         'com.zaxxer:HikariCP:3.2.0',
@@ -52,10 +52,9 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs << '-parameters'
 }
 
-//test {
-//    useJUnitPlatform()
-//}
-
+test {
+    useJUnitPlatform()
+}
 
 publishing {
     publications {
