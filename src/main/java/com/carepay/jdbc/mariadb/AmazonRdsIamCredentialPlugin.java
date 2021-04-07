@@ -21,15 +21,24 @@
 
 package com.carepay.jdbc.mariadb;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 import com.carepay.aws.auth.Credentials;
 import com.carepay.aws.auth.CredentialsProvider;
 import com.carepay.aws.auth.DefaultCredentialsProviderChain;
 import com.carepay.aws.auth.RegionProvider;
 import com.carepay.aws.region.DefaultRegionProviderChain;
+import com.carepay.aws.util.URLOpener;
 import com.carepay.jdbc.RdsAWS4Signer;
 import org.mariadb.jdbc.HostAddress;
 import org.mariadb.jdbc.credential.Credential;
@@ -42,10 +51,12 @@ import static java.time.ZoneOffset.UTC;
  *
  */
 public class AmazonRdsIamCredentialPlugin implements CredentialPlugin {
+    private static final Pattern URL_PATTERN = Pattern.compile("^https?://.*");
 
-    private final Clock clock;
     private final CredentialsProvider credentialsProvider;
     private final RegionProvider regionProvider;
+    private final Clock clock;
+    private final URLOpener opener;
 
     private RdsAWS4Signer signer;
     private LocalDateTime expiryDate;
@@ -69,22 +80,52 @@ public class AmazonRdsIamCredentialPlugin implements CredentialPlugin {
     }
 
     public AmazonRdsIamCredentialPlugin() {
-        this(Clock.systemUTC(), new DefaultCredentialsProviderChain(), new DefaultRegionProviderChain());
+        this(new DefaultCredentialsProviderChain(), new DefaultRegionProviderChain(), Clock.systemUTC(), new URLOpener.Default());
     }
 
-    public AmazonRdsIamCredentialPlugin(Clock clock, CredentialsProvider credentialsProvider, RegionProvider regionProvider) {
+    public AmazonRdsIamCredentialPlugin(CredentialsProvider credentialsProvider, RegionProvider regionProvider, Clock clock, URLOpener opener) {
         this.clock = clock;
         this.credentialsProvider = credentialsProvider;
         this.regionProvider = regionProvider;
+        this.opener = opener;
     }
 
     @Override
     public CredentialPlugin initialize(final Options options, final String username, final HostAddress hostAddress) {
         this.hostAddress = hostAddress;
         this.username = username;
+        configureServerSslCert(options);
         final Properties nonMappedOptions = options.nonMappedOptions;
         this.signer = new RdsAWS4Signer(getCredentialsProvider(nonMappedOptions), getRegionProvider(nonMappedOptions), this.clock);
         return this;
+    }
+
+    private void configureServerSslCert(Options options) {
+        try {
+            if (options.serverSslCert == null) {
+                options.serverSslCert = downloadCertBundle();
+            } else if (URL_PATTERN.matcher(options.serverSslCert).matches()) {
+                options.serverSslCert = downloadCertBundle(options.serverSslCert);
+            }
+        } catch (IOException e) {
+            options.serverSslCert = "classpath:rds-combined-ca-bundle.pem";
+        }
+    }
+
+    private String downloadCertBundle() throws IOException {
+        return downloadCertBundle("https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem");
+    }
+
+    private String downloadCertBundle(final String url) throws IOException {
+        final HttpURLConnection uc = opener.open(URLOpener.create(url));
+        try (final BufferedReader in = new BufferedReader(new InputStreamReader(uc.getInputStream(), StandardCharsets.UTF_8));
+             final PrintWriter pw = new PrintWriter(new StringWriter())) {
+            String line;
+            while ((line = in.readLine()) != null) {
+                pw.println(line);
+            }
+            return pw.toString();
+        }
     }
 
     private RegionProvider getRegionProvider(final Properties properties) {

@@ -29,7 +29,9 @@ jobs:
           -PsonatypePassword="${{ secrets.SONATYPE_PASSWORD }}" \
           -Psigning.keyId=${{ secrets.GPG_KEY_ID }} \
           -Psigning.password="${{ secrets.GPG_PASSWORD }}" \
-          -Psigning.secretKeyRingFile=secring.gpg
+          -Psigning.secretKeyRingFile=secring.gpg \
+          -PgithubUsername=${{ secrets.RELEASE_USERNAME }} \
+          -PgithubPassword="${{ secrets.RELEASE_TOKEN }}"
     - name: Create Release
       uses: actions/create-release@v1
       env:
