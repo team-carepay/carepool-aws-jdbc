@@ -4,6 +4,7 @@ public final class RdsIamConstants {
     public static final String CLASSPATH_PROTOCOL = "classpath";
     public static final String CA_BUNDLE_PATH = "/rds-combined-ca-bundle.pem"; //NOSONAR
     public static final String CA_BUNDLE_URL = CLASSPATH_PROTOCOL + ":" + CA_BUNDLE_PATH;
+    public static final String BUNDLE_DOWNLOAD_URL = "https://s3.amazonaws.com/rds-downloads" + CA_BUNDLE_PATH;
     public static final String USE_SSL = "useSSL";
     public static final String REQUIRE_SSL = "requireSSL";
     public static final String VERIFY_SERVER_CERTIFICATE = "verifyServerCertificate";

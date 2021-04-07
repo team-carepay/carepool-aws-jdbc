@@ -1,24 +1,3 @@
-/*
- * MariaDB Client for Java
- *
- * Copyright (c) 2012-2014 Monty Program Ab.
- * Copyright (c) 2015-2020 MariaDB Corporation Ab.
- *
- * This library is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation; either version 2.1 of the License, or (at your option)
- * any later version.
- *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
- * for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License along
- * with this library; if not, write to Monty Program Ab info@montyprogram.com.
- *
- */
-
 package com.carepay.jdbc.mariadb;
 
 import java.io.BufferedReader;
@@ -27,7 +6,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.HttpURLConnection;
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Properties;
@@ -40,15 +18,20 @@ import com.carepay.aws.auth.RegionProvider;
 import com.carepay.aws.region.DefaultRegionProviderChain;
 import com.carepay.aws.util.URLOpener;
 import com.carepay.jdbc.RdsAWS4Signer;
+import com.carepay.jdbc.pem.PemKeyStoreProvider;
 import org.mariadb.jdbc.HostAddress;
 import org.mariadb.jdbc.credential.Credential;
 import org.mariadb.jdbc.credential.CredentialPlugin;
 import org.mariadb.jdbc.util.Options;
 
+import static com.carepay.jdbc.RdsIamConstants.BUNDLE_DOWNLOAD_URL;
+import static com.carepay.jdbc.RdsIamConstants.CA_BUNDLE_URL;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.ZoneOffset.UTC;
 
 /**
- *
+ * MariaDB Credential Plugin which supports Amazon IAM authentication. Multiple credentials providers
+ * are supported: Environment, System Properties, Profile, SSO, EC2 Metadata.
  */
 public class AmazonRdsIamCredentialPlugin implements CredentialPlugin {
     private static final Pattern URL_PATTERN = Pattern.compile("^https?://.*");
@@ -83,11 +66,12 @@ public class AmazonRdsIamCredentialPlugin implements CredentialPlugin {
         this(new DefaultCredentialsProviderChain(), new DefaultRegionProviderChain(), Clock.systemUTC(), new URLOpener.Default());
     }
 
-    public AmazonRdsIamCredentialPlugin(CredentialsProvider credentialsProvider, RegionProvider regionProvider, Clock clock, URLOpener opener) {
+    public AmazonRdsIamCredentialPlugin(final CredentialsProvider credentialsProvider, final RegionProvider regionProvider, final Clock clock, final URLOpener opener) {
         this.clock = clock;
         this.credentialsProvider = credentialsProvider;
         this.regionProvider = regionProvider;
         this.opener = opener;
+        PemKeyStoreProvider.register();
     }
 
     @Override
@@ -100,7 +84,7 @@ public class AmazonRdsIamCredentialPlugin implements CredentialPlugin {
         return this;
     }
 
-    private void configureServerSslCert(Options options) {
+    private void configureServerSslCert(final Options options) {
         try {
             if (options.serverSslCert == null) {
                 options.serverSslCert = downloadCertBundle();
@@ -108,17 +92,17 @@ public class AmazonRdsIamCredentialPlugin implements CredentialPlugin {
                 options.serverSslCert = downloadCertBundle(options.serverSslCert);
             }
         } catch (IOException e) {
-            options.serverSslCert = "classpath:rds-combined-ca-bundle.pem";
+            options.serverSslCert = CA_BUNDLE_URL;
         }
     }
 
     private String downloadCertBundle() throws IOException {
-        return downloadCertBundle("https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem");
+        return downloadCertBundle(BUNDLE_DOWNLOAD_URL);
     }
 
     private String downloadCertBundle(final String url) throws IOException {
         final HttpURLConnection uc = opener.open(URLOpener.create(url));
-        try (final BufferedReader in = new BufferedReader(new InputStreamReader(uc.getInputStream(), StandardCharsets.UTF_8));
+        try (final BufferedReader in = new BufferedReader(new InputStreamReader(uc.getInputStream(), UTF_8));
              final PrintWriter pw = new PrintWriter(new StringWriter())) {
             String line;
             while ((line = in.readLine()) != null) {
