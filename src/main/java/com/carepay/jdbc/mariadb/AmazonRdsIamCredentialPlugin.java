@@ -8,6 +8,7 @@ import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
@@ -80,6 +81,7 @@ public class AmazonRdsIamCredentialPlugin implements CredentialPlugin {
         this.username = username;
         configureServerSslCert(options);
         final Properties nonMappedOptions = options.nonMappedOptions;
+        Optional.ofNullable(nonMappedOptions.getProperty("profile")).ifPresent( value -> System.setProperty("aws.profile"));
         this.signer = new RdsAWS4Signer(getCredentialsProvider(nonMappedOptions), getRegionProvider(nonMappedOptions), this.clock);
         return this;
     }
@@ -103,12 +105,14 @@ public class AmazonRdsIamCredentialPlugin implements CredentialPlugin {
     private String downloadCertBundle(final String url) throws IOException {
         final HttpURLConnection uc = opener.open(URLOpener.create(url));
         try (final BufferedReader in = new BufferedReader(new InputStreamReader(uc.getInputStream(), UTF_8));
-             final PrintWriter pw = new PrintWriter(new StringWriter())) {
+             final StringWriter sw = new StringWriter();
+             final PrintWriter pw = new PrintWriter(sw)) {
             String line;
             while ((line = in.readLine()) != null) {
                 pw.println(line);
             }
-            return pw.toString();
+            pw.flush();
+            return sw.toString();
         }
     }
 
