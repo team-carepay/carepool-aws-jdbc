@@ -81,7 +81,6 @@ public class AmazonRdsIamCredentialPlugin implements CredentialPlugin {
         this.username = username;
         configureServerSslCert(options);
         final Properties nonMappedOptions = options.nonMappedOptions;
-        Optional.ofNullable(nonMappedOptions.getProperty("profile")).ifPresent( value -> System.setProperty("aws.profile"));
         this.signer = new RdsAWS4Signer(getCredentialsProvider(nonMappedOptions), getRegionProvider(nonMappedOptions), this.clock);
         return this;
     }
