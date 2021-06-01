@@ -29,6 +29,7 @@ dependencies {
         'com.zaxxer:HikariCP:3.2.0',
         'org.apache.tomcat:tomcat-jdbc:9.0.21',
         'org.mariadb.jdbc:mariadb-java-client:2.7.1',
+        'mysql:mysql-connector-java:8.0.25',
     )
     testImplementation(
             'com.h2database:h2:1.4.199',
