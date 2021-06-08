@@ -1,134 +1,139 @@
 plugins {
-    id 'java-library'
-    id 'maven-publish'
-    id 'signing'
-    id 'jacoco'
-    id 'checkstyle'
+	id 'java-library'
+	id 'maven-publish'
+	id 'signing'
+	id 'jacoco'
 
-    id 'org.sonarqube' version '2.8'
-    id 'net.researchgate.release' version '2.8.1'
-    id 'io.github.gradle-nexus.publish-plugin' version '1.0.0'
-    id 'com.github.johnrengelman.shadow' version '6.1.0'
+	id 'org.sonarqube' version '2.8'
+	id 'net.researchgate.release' version '2.8.1'
+	id 'io.github.gradle-nexus.publish-plugin' version '1.0.0'
+	id 'com.github.johnrengelman.shadow' version '6.1.0'
+	id 'com.diffplug.spotless' version '5.12.5'
 }
 
 group = 'com.carepay'
 
 configurations {
-    testImplementation.extendsFrom compileOnly
+	testImplementation.extendsFrom compileOnly
 }
 
 repositories {
-    mavenCentral()
+	mavenCentral()
 }
 
 dependencies {
-    implementation(
-        'com.carepay:carepool-aws:2.1.2',
-    )
-    compileOnly(
-        'com.zaxxer:HikariCP:3.2.0',
-        'org.apache.tomcat:tomcat-jdbc:9.0.21',
-        'org.mariadb.jdbc:mariadb-java-client:2.7.1',
-    )
-    testImplementation(
-            'com.h2database:h2:1.4.199',
-            'org.junit.jupiter:junit-jupiter-api:5.7.0',
-            'org.assertj:assertj-core:3.18.1',
-            'org.mockito:mockito-core:3.7.0',
-    )
-    testRuntimeOnly(
-            'org.junit.jupiter:junit-jupiter-engine:5.7.0',
-    )
+	implementation(
+		'com.carepay:carepool-aws:2.1.2',
+	)
+	compileOnly(
+		'com.zaxxer:HikariCP:3.2.0',
+		'org.apache.tomcat:tomcat-jdbc:9.0.21',
+		'org.mariadb.jdbc:mariadb-java-client:2.7.1',
+		'mysql:mysql-connector-java:8.0.25',
+	)
+	testImplementation(
+			'com.h2database:h2:1.4.199',
+			'org.junit.jupiter:junit-jupiter-api:5.7.0',
+			'org.assertj:assertj-core:3.18.1',
+			'org.mockito:mockito-core:3.7.0',
+	)
+	testRuntimeOnly(
+			'org.junit.jupiter:junit-jupiter-engine:5.7.0',
+	)
 }
 
 java {
-    withSourcesJar()
-    withJavadocJar()
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+	withSourcesJar()
+	withJavadocJar()
+	sourceCompatibility = JavaVersion.VERSION_1_8
+	targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 tasks.withType(JavaCompile).configureEach {
-    options.compilerArgs << '-parameters'
+	options.compilerArgs << '-parameters'
 }
 
 test {
-    useJUnitPlatform()
+	useJUnitPlatform()
 }
 
 publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-            pom {
-                name = 'Carepool AWS JDBC'
-                description = 'RDS IAM support for Tomcat, Hikari and MariaDB'
-                url = 'https://github.com/team-carepay/carepool-aws-jdbc'
-                licenses {
-                    license {
-                        name = 'The Apache License, Version 2.0'
-                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-                developers {
-                    developer {
-                        id = 'blagerweij'
-                        name = 'Barry Lagerweij'
-                        email = 'b.lagerweij@carepay.com'
-                    }
-                }
-                scm {
-                    connection = 'scm:git:git://github.com/team-carepay/carepool-aws-jdbc.git'
-                    developerConnection = 'scm:git:git@github.com:team-carepay/carepool-aws-jdbc.git'
-                    url = 'https://github.com/team-carepay/carepool-aws-jdbc'
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/team-carepay/carepool-aws-jdbc")
-            credentials {
-                username = githubUsername
-                password = githubPassword
-            }
-        }
-    }
+	publications {
+		mavenJava(MavenPublication) {
+			from components.java
+			pom {
+				name = 'Carepool AWS JDBC'
+				description = 'RDS IAM support for Tomcat, Hikari and MariaDB'
+				url = 'https://github.com/team-carepay/carepool-aws-jdbc'
+				licenses {
+					license {
+						name = 'The Apache License, Version 2.0'
+						url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+				developers {
+					developer {
+						id = 'blagerweij'
+						name = 'Barry Lagerweij'
+						email = 'b.lagerweij@carepay.com'
+					}
+				}
+				scm {
+					connection = 'scm:git:git://github.com/team-carepay/carepool-aws-jdbc.git'
+					developerConnection = 'scm:git:git@github.com:team-carepay/carepool-aws-jdbc.git'
+					url = 'https://github.com/team-carepay/carepool-aws-jdbc'
+				}
+			}
+		}
+	}
+	repositories {
+		maven {
+			name = "GitHubPackages"
+			url = uri("https://maven.pkg.github.com/team-carepay/carepool-aws-jdbc")
+			credentials {
+				username = githubUsername
+				password = githubPassword
+			}
+		}
+	}
 }
 
 signing {
-    required = { gradle.taskGraph.hasTask("publish") }
-    sign publishing.publications.mavenJava
-}
-
-checkstyle {
-    toolVersion = '8.41'
-    config = project.resources.text.fromUri('https://raw.githubusercontent.com/checkstyle/checkstyle/checkstyle-8.41/src/main/resources/google_checks.xml')
+	required = { gradle.taskGraph.hasTask("publish") }
+	sign publishing.publications.mavenJava
 }
 
 tasks.sonarqube.dependsOn tasks.jacocoTestReport
 jacocoTestReport {
-    reports.xml.enabled true
+	reports.xml.enabled true
 }
 
 artifacts {
-    archives javadocJar, sourcesJar
+	archives javadocJar, sourcesJar
 }
 
 release {
-    tagCommitMessage = 'Release tag [skip ci]'
-    newVersionCommitMessage = 'New version [skip ci]'
-    git {
-        requireBranch = ''
-    }
+	tagCommitMessage = 'Release tag [skip ci]'
+	newVersionCommitMessage = 'New version [skip ci]'
+	git {
+		requireBranch = ''
+	}
 }
 
 nexusPublishing {
-    repositories {
-        sonatype {
-            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-            stagingProfileId = '10134d502bbe18'
-        }
-    }
+	repositories {
+		sonatype {
+			nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+			stagingProfileId = '10134d502bbe18'
+		}
+	}
+}
+
+spotless {
+	ratchetFrom 'origin/main'
+	java {
+		googleJavaFormat('1.8')
+		importOrder('java', 'javax', '', '\\#')
+		removeUnusedImports()
+	}
 }

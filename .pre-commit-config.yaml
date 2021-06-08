@@ -4,15 +4,20 @@ repos:
     hooks:
       - id: check-merge-conflict
       - id: no-commit-to-branch
-        args: [--branch, master]
+        args: [ --branch, master ]
       - id: detect-aws-credentials
-        args: [--allow-missing-credentials]
+        args: [ --allow-missing-credentials ]
       - id: detect-private-key
       - id: check-yaml
-        args: [--allow-multiple-documents]
+        args: [ --allow-multiple-documents ]
       - id: trailing-whitespace
   - repo: git@github.com:team-carepay/pre-commit-hooks
     rev: v1.1.0
     hooks:
       - id: checkstyle
         args: [ -c, https://raw.githubusercontent.com/checkstyle/checkstyle/checkstyle-8.41/src/main/resources/google_checks.xml ]
+  - repo: https://github.com/jguttman94/pre-commit-gradle
+    rev: v0.3.0
+    hooks:
+      - id: gradle-spotless
+        args: [ --wrapper ]

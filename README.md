@@ -2,6 +2,7 @@
 
 Adds supports for RDS IAM authentication to a JDBC DataSource. Supports Tomcat and Hikari connection pools.
 
+## 1. Tomcat DataSource
 To use with Apache Tomcat JDBC ConnectionPool (default in Spring Boot 1.x):
 
 ```
@@ -13,7 +14,7 @@ spring:
 
 ```
 
-And with Hikari (default in Spring Boot 2.x)
+## 2. Hikari (default in Spring Boot 2.x)
 ```
 spring:
   datasource:
@@ -30,7 +31,11 @@ implementation 'com.zaxxer:HikariCP:3.2.0'`
 //implementation 'org.apache.tomcat:tomcat-jdbc:9.0.21'
 ```
 
-## MariaDB Plugin
+## 3. MySQL Plugin
+To add support for IAM authentication using the MySQL Connector/J driver, you need to specify a
+specific authentication plugin: `jdbc:mysql://test-db.cluster-xxxxxxx.eu-west-1.rds.amazonaws.com/mydb?authenticationPlugins=com.carepay.jdbc.mysql.RdsIamPasswordPlugin`
+
+## 4. MariaDB Plugin
 To use the MariaDB Plugin, simply add `carepool-aws-jdbc-2.1.1-all.jar` to the classpath of the JDBC driver. To use the IAM plugin, you need to specify the credentials type: `credentialType=AWS4RDS`. Example JDBC URL:
 
 `jdbc:mariadb://db.cluster-xx.eu-west-1.rds.amazonaws.com/dbname?credentialType=AWS4RDS`
