@@ -17,7 +17,7 @@ repos:
       - id: checkstyle
         args: [ -c, https://raw.githubusercontent.com/checkstyle/checkstyle/checkstyle-8.41/src/main/resources/google_checks.xml ]
   - repo: https://github.com/jguttman94/pre-commit-gradle
-    rev: v0.3.0  # Use the ref you want to point at
+    rev: v0.3.0
     hooks:
       - id: gradle-spotless
         args: [ --wrapper ]
