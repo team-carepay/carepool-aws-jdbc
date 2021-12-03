@@ -66,6 +66,10 @@ public class RdsIamPasswordPlugin implements AuthenticationPlugin<NativePacketPa
         PemKeyStoreProvider.register();
     }
 
+    public void init(Protocol<NativePacketPayload> protocol) {
+        init(protocol, null);
+    }
+
     @Override
     public void init(Protocol<NativePacketPayload> prot, MysqlCallbackHandler cbh) {
         this.protocol = prot;
