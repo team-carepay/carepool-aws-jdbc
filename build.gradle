@@ -8,7 +8,6 @@ plugins {
 	id 'net.researchgate.release' version '2.8.1'
 	id 'io.github.gradle-nexus.publish-plugin' version '1.0.0'
 	id 'com.github.johnrengelman.shadow' version '6.1.0'
-	id 'com.diffplug.spotless' version '5.12.5'
 }
 
 group = 'com.carepay'
@@ -129,11 +128,3 @@ nexusPublishing {
 	}
 }
 
-spotless {
-	ratchetFrom 'origin/main'
-	java {
-		googleJavaFormat('1.8')
-		importOrder('java', 'javax', '', '\\#')
-		removeUnusedImports()
-	}
-}
