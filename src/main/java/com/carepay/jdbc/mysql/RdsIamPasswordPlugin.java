@@ -80,7 +80,7 @@ public class RdsIamPasswordPlugin implements AuthenticationPlugin<NativePacketPa
         propertySet.getStringProperty(PropertyKey.trustCertificateKeyStoreType).setValue("PEM");
         propertySet.getStringProperty(PropertyKey.enabledTLSProtocols).setValue("TLSv1.2");
         final RuntimeProperty<String> awsProfileProperty = propertySet.getStringProperty("awsProfile");
-        if (awsProfileProperty != null && awsProfileProperty.isExplicitlySet()) {
+        if (awsProfileProperty != null && awsProfileProperty.getValue() != null) {
             System.setProperty("aws.profile", awsProfileProperty.getValue());
         }
     }
@@ -108,12 +108,8 @@ public class RdsIamPasswordPlugin implements AuthenticationPlugin<NativePacketPa
             NativePacketPayload fromServer, List<NativePacketPayload> toServer) {
         toServer.clear();
         final String token = getPassword();
-        final String encoding =
-                this.protocol.versionMeetsMinimum(5, 7, 6)
-                        ? this.protocol.getPasswordCharacterEncoding()
-                        : "UTF-8";
         final NativePacketPayload payload =
-                new NativePacketPayload(StringUtils.getBytes(token, encoding));
+                new NativePacketPayload(StringUtils.getBytes(token, "US-ASCII"));
         payload.setPosition(payload.getPayloadLength());
         payload.writeInteger(IntegerDataType.INT1, 0);
         payload.setPosition(0);
