@@ -36,6 +36,10 @@ import static java.time.ZoneOffset.UTC;
 public class AmazonRdsIamCredentialPlugin implements CredentialPlugin {
     private static final Pattern URL_PATTERN = Pattern.compile("^https?://.*");
 
+    static {
+        PemKeyStoreProvider.register();
+    }
+
     private final CredentialsProvider credentialsProvider;
     private final RegionProvider regionProvider;
     private final Clock clock;

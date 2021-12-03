@@ -28,6 +28,10 @@ import static java.time.ZoneOffset.UTC;
  * MySQL Clear Password Authentication Plugin
  */
 public class RdsIamPasswordPlugin implements AuthenticationPlugin<NativePacketPayload> {
+    static {
+        PemKeyStoreProvider.register();
+    }
+
     /**
      * replaces the built-in clear-text plugin
      */
