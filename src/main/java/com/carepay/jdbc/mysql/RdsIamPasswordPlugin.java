@@ -82,7 +82,6 @@ public class RdsIamPasswordPlugin implements AuthenticationPlugin<NativePacketPa
                 .getStringProperty(PropertyKey.trustCertificateKeyStoreUrl)
                 .setValue("classpath:/rds-combined-ca-bundle.pem");
         propertySet.getStringProperty(PropertyKey.trustCertificateKeyStoreType).setValue("PEM");
-        propertySet.getStringProperty(PropertyKey.enabledTLSProtocols).setValue("TLSv1.2");
         final RuntimeProperty<String> awsProfileProperty = propertySet.getStringProperty("awsProfile");
         if (awsProfileProperty != null && awsProfileProperty.getValue() != null) {
             System.setProperty("aws.profile", awsProfileProperty.getValue());
