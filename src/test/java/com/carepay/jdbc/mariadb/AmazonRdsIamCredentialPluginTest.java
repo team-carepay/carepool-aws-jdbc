@@ -34,7 +34,7 @@ class AmazonRdsIamCredentialPluginTest {
     void initializeUsingProps() throws IOException {
         HttpURLConnection uc = mock(HttpURLConnection.class);
         when(uc.getInputStream()).thenReturn(getClass().getResourceAsStream("/rds-combined-ca-bundle.pem"));
-        AmazonRdsIamCredentialPlugin tempPlugin = new AmazonRdsIamCredentialPlugin(null, null, CLOCK, u -> uc);
+        AmazonRdsIamCredentialPlugin tempPlugin = new AmazonRdsIamCredentialPlugin(() -> new Credentials("IAMKEYINSTANCE", "asdfqwertypolly", "ZYX12345"), () -> "ap-southeast-1", CLOCK, u -> uc);
         Options options = new Options();
         options.serverSslCert = "https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem";
         options.nonMappedOptions.setProperty("accessKeyId", "IAMXXXXXXXXXX");
@@ -43,7 +43,7 @@ class AmazonRdsIamCredentialPluginTest {
         tempPlugin.initialize(options, "anotheruser", new HostAddress("mysql-host-db.cluster-xxxxxxxxxx.ap-southeast-1.rds.amazonaws.com", 3306));
         Credential creds = tempPlugin.get();
         assertThat(creds.getUser()).isEqualTo("anotheruser");
-        assertThat(creds.getPassword()).isEqualTo("mysql-host-db.cluster-xxxxxxxxxx.ap-southeast-1.rds.amazonaws.com:3306/?Action=connect&DBUser=anotheruser&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=IAMXXXXXXXXXX%2F20180919%2Fap-southeast-1%2Frds-db%2Faws4_request&X-Amz-Date=20180919T160242Z&X-Amz-Expires=900&X-Amz-SignedHeaders=host&X-Amz-Signature=58ee4aed2efba3cc2aaa43abdb319a884a2c42c8bc034ba1806ab87f78689974");
+        assertThat(creds.getPassword()).isEqualTo("mysql-host-db.cluster-xxxxxxxxxx.ap-southeast-1.rds.amazonaws.com:3306/?Action=connect&DBUser=anotheruser&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=IAMKEYINSTANCE%2F20180919%2Fap-southeast-1%2Frds-db%2Faws4_request&X-Amz-Date=20180919T160242Z&X-Amz-Expires=900&X-Amz-Security-Token=ZYX12345&X-Amz-SignedHeaders=host&X-Amz-Signature=0e2dddfa927d4a844c9c4799b0a8f766e479e1014230a52db7f50c72c922a8af");
     }
 
     @Test

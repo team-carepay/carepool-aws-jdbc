@@ -8,7 +8,6 @@ import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
@@ -81,6 +80,9 @@ public class AmazonRdsIamCredentialPlugin implements CredentialPlugin {
         this.username = username;
         configureServerSslCert(options);
         final Properties nonMappedOptions = options.nonMappedOptions;
+        if (nonMappedOptions.containsKey("awsProfile")) {
+            System.setProperty("aws.profile", nonMappedOptions.getProperty("awsProfile"));
+        }
         this.signer = new RdsAWS4Signer(getCredentialsProvider(nonMappedOptions), getRegionProvider(nonMappedOptions), this.clock);
         return this;
     }
@@ -121,7 +123,7 @@ public class AmazonRdsIamCredentialPlugin implements CredentialPlugin {
     }
 
     private CredentialsProvider getCredentialsProvider(final Properties properties) {
-        final Credentials propertyCredentials = new Credentials(properties.getProperty("accessKeyId"), properties.getProperty("secretKey"), null);
+        final Credentials propertyCredentials = new Credentials(properties.getProperty("awsAccessKeyId"), properties.getProperty("awsSecretKey"), properties.getProperty("awsSessionToken"));
         return propertyCredentials.isPresent() ? () -> propertyCredentials : this.credentialsProvider;
     }
 
