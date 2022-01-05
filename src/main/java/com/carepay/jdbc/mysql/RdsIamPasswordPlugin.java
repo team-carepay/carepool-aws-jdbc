@@ -25,7 +25,7 @@ import com.mysql.cj.util.StringUtils;
 import static java.time.ZoneOffset.UTC;
 
 /**
- * MySQL Clear Password Authentication Plugin
+ * MySQL Clear Password Authentication Plugin. Supported from Connector/J v8.0.10 and newer.
  */
 public class RdsIamPasswordPlugin implements AuthenticationPlugin<NativePacketPayload> {
     static {
@@ -50,8 +50,7 @@ public class RdsIamPasswordPlugin implements AuthenticationPlugin<NativePacketPa
      * Default constructor, uses AWS provider-chain by default
      */
     public RdsIamPasswordPlugin() {
-        this(
-                new DefaultCredentialsProviderChain(), new DefaultRegionProviderChain(), Clock.systemUTC());
+        this(new DefaultCredentialsProviderChain(), new DefaultRegionProviderChain(), Clock.systemUTC());
     }
 
     /**
@@ -67,7 +66,6 @@ public class RdsIamPasswordPlugin implements AuthenticationPlugin<NativePacketPa
             final Clock clock) {
         this.clock = clock;
         this.signer = new RdsAWS4Signer(credentialsProvider, regionProvider, this.clock);
-        PemKeyStoreProvider.register();
     }
 
     public void init(Protocol<NativePacketPayload> protocol) {

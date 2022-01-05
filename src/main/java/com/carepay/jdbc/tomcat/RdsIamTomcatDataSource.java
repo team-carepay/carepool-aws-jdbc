@@ -32,11 +32,12 @@ public class RdsIamTomcatDataSource extends org.apache.tomcat.jdbc.pool.DataSour
         PemKeyStoreProvider.register();
     }
 
-    public RdsIamTomcatDataSource(final RdsAWS4Signer tokenGenerator, final ScheduledExecutorService scheduledExecutorService, final PoolConfiguration poolProperties) {
+    public RdsIamTomcatDataSource(final RdsAWS4Signer tokenGenerator,
+                                  final ScheduledExecutorService scheduledExecutorService,
+                                  final PoolConfiguration poolProperties) {
         super(poolProperties);
         this.tokenGenerator = tokenGenerator;
         this.scheduledExectorService = scheduledExecutorService;
-        PemKeyStoreProvider.register();
     }
 
     /**

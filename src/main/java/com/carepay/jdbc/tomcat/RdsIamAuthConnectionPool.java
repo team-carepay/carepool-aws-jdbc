@@ -38,7 +38,9 @@ public class RdsIamAuthConnectionPool extends ConnectionPool {
     private int port;
     private ScheduledFuture<?> backgroundFuture;
 
-    public RdsIamAuthConnectionPool(final RdsAWS4Signer tokenGenerator, PoolConfiguration prop, ScheduledExecutorService scheduledExecutorService) throws SQLException {
+    public RdsIamAuthConnectionPool(final RdsAWS4Signer tokenGenerator,
+                                    final PoolConfiguration prop,
+                                    final ScheduledExecutorService scheduledExecutorService) throws SQLException {
         super(prop);
         this.tokenGenerator = tokenGenerator;
         this.scheduledExectorService = scheduledExecutorService;
@@ -62,7 +64,7 @@ public class RdsIamAuthConnectionPool extends ConnectionPool {
      * @param prop the pool configuration
      */
     @Override
-    protected void init(PoolConfiguration prop) throws SQLException {
+    protected void init(final PoolConfiguration prop) throws SQLException {
         final URL uri = JdbcUrlUtils.extractJdbcURL(prop.getUrl());
         host = uri.getHost();
         port = uri.getPort();
@@ -82,7 +84,7 @@ public class RdsIamAuthConnectionPool extends ConnectionPool {
     @SuppressWarnings("unchecked")
     private BlockingQueue<PooledConnection> getPrivateConnectionListField(final String fieldName) {
         try {
-            Field queueField = ConnectionPool.class.getDeclaredField(fieldName);
+            final Field queueField = ConnectionPool.class.getDeclaredField(fieldName);
             queueField.setAccessible(true); //NOSONAR
             return (BlockingQueue<PooledConnection>) queueField.get(this);
         } catch (NoSuchFieldException | IllegalAccessException e) {
@@ -93,13 +95,12 @@ public class RdsIamAuthConnectionPool extends ConnectionPool {
     /**
      * Updates the password in the pool by generating a new token
      */
-    private void updatePassword(PoolConfiguration poolConfiguration) {
-        String token = tokenGenerator.generateToken(host, port, poolConfiguration.getUsername());
-        poolConfiguration.setPassword(token);
+    private void updatePassword(final PoolConfiguration poolConfiguration) {
+        poolConfiguration.setPassword(tokenGenerator.generateToken(host, port, poolConfiguration.getUsername()));
     }
 
     @Override
-    protected void close(boolean force) {
+    protected void close(final boolean force) {
         super.close(force);
         if (backgroundFuture != null) {
             backgroundFuture.cancel(force);

@@ -30,8 +30,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.ZoneOffset.UTC;
 
 /**
- * MariaDB Credential Plugin which supports Amazon IAM authentication. Multiple credentials providers
- * are supported: Environment, System Properties, Profile, SSO, EC2 Metadata.
+ * MariaDB Credential Plugin which supports Amazon IAM authentication. Multiple credentials
+ * providers are supported: Environment, System Properties, Profile, SSO, EC2 Metadata.
  */
 public class AmazonRdsIamCredentialPlugin implements CredentialPlugin {
     private static final Pattern URL_PATTERN = Pattern.compile("^https?://.*");
@@ -94,17 +94,13 @@ public class AmazonRdsIamCredentialPlugin implements CredentialPlugin {
     private void configureServerSslCert(final Options options) {
         try {
             if (options.serverSslCert == null) {
-                options.serverSslCert = downloadCertBundle();
+                options.serverSslCert = downloadCertBundle(BUNDLE_DOWNLOAD_URL);
             } else if (URL_PATTERN.matcher(options.serverSslCert).matches()) {
                 options.serverSslCert = downloadCertBundle(options.serverSslCert);
             }
         } catch (IOException e) {
             options.serverSslCert = CA_BUNDLE_URL;
         }
-    }
-
-    private String downloadCertBundle() throws IOException {
-        return downloadCertBundle(BUNDLE_DOWNLOAD_URL);
     }
 
     private String downloadCertBundle(final String url) throws IOException {
