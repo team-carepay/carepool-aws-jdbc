@@ -46,7 +46,11 @@ public class PemKeyStoreProvider extends Provider {
     }
 
     private static void registerStreamHandler() {
-        URL.setURLStreamHandlerFactory(p -> CLASSPATH_PROTOCOL.equals(p) ? new ClasspathURLStreamHandler() : null);
+        try {
+            URL.setURLStreamHandlerFactory(p -> CLASSPATH_PROTOCOL.equals(p) ? new ClasspathURLStreamHandler() : null);
+        } catch (Throwable t) {
+            //NOSONAR ignore
+        }
     }
 
     private static class ClasspathURLStreamHandler extends URLStreamHandler {
