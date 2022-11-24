@@ -12,7 +12,7 @@ repos:
         args: [ --allow-multiple-documents ]
       - id: trailing-whitespace
   - repo: https://github.com/team-carepay/pre-commit-hooks
-    rev: v1.1.0
+    rev: v1.3.0
     hooks:
       - id: checkstyle
         args: [ -c, "https://raw.githubusercontent.com/checkstyle/checkstyle/checkstyle-8.41/src/main/resources/google_checks.xml" ]

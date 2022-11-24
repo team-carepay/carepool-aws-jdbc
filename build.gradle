@@ -22,7 +22,7 @@ repositories {
 
 dependencies {
 	implementation(
-		'com.carepay:carepool-aws:2.1.3',
+		'com.carepay:carepool-aws:2.2.0',
 	)
 	compileOnly(
 		'com.zaxxer:HikariCP:3.2.0',
@@ -58,6 +58,9 @@ test {
 
 publishing {
 	publications {
+		shadow(MavenPublication) { publication ->
+			project.shadow.component(publication)
+		}
 		mavenJava(MavenPublication) {
 			from components.java
 			pom {

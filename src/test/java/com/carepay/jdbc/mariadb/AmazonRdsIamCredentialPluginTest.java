@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 
 import com.carepay.aws.auth.Credentials;
-import com.carepay.aws.util.URLOpener;
+import com.carepay.aws.net.URLOpener;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mariadb.jdbc.HostAddress;
