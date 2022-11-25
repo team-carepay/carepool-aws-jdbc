@@ -26,7 +26,7 @@ jobs:
     - name: Build with Gradle
       run: |
         echo -n "${{ secrets.GPG_KEY_ARMOR }}" | gpg --quiet --output secring.gpg --dearmor -
-        ./gradlew publishMavenJavaPublicationToGitHubPackagesRepository publishToSonatype closeAndReleaseSonatypeStagingRepository \
+        ./gradlew publishShadowPublicationToGitHubPackagesRepository publishMavenJavaPublicationToSonatypeRepository closeAndReleaseSonatypeStagingRepository \
           -PsonatypeUsername=${{ secrets.SONATYPE_USERNAME }} \
           -PsonatypePassword="${{ secrets.SONATYPE_PASSWORD }}" \
           -Psigning.keyId=${{ secrets.GPG_KEY_ID }} \
