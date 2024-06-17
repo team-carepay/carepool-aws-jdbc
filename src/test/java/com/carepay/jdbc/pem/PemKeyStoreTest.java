@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.security.Key;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.util.Collections;
 import java.util.Enumeration;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -57,7 +58,7 @@ class PemKeyStoreTest {
     void testGetAliases() {
         Enumeration<String> aliases = pemKeyStore.engineAliases();
         assertThat(aliases.hasMoreElements()).isTrue();
-        assertThat(aliases.nextElement()).isEqualTo("pem67");
+        assertThat(Collections.list(aliases)).contains("pem67");
     }
 
     @Test
